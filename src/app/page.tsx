@@ -22,7 +22,7 @@ import {
   Copy, Check, ChevronLeft, ChevronRight, ExternalLink, Shield, Zap, Gift,
   ArrowRight, Wallet, Globe, Users, TrendingUp, LogOut, LogIn, User,
   DollarSign, Clock, CheckCircle, AlertCircle, LayoutDashboard,
-  Eye, EyeOff, Loader2, BarChart3, UserPlus,
+  Eye, EyeOff, Loader2, BarChart3, UserPlus, Plane, Crown, Star, Award,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -34,7 +34,22 @@ interface SessionUser {
   name: string;
   email: string;
   role: string;
+  licencia?: string;
 }
+
+const LICENCIAS = [
+  { id: 'promotor', label: 'Promotor', price: '$150', value: 150 },
+  { id: 'coordinador', label: 'Coordinador', price: '$300', value: 300 },
+  { id: 'senior', label: 'Senior', price: '$500', value: 500 },
+  { id: 'supervisor', label: 'Supervisor', price: '$1,000', value: 1000 },
+];
+
+const LICENCIA_ICONS: Record<string, typeof Crown> = {
+  promotor: Star,
+  coordinador: Award,
+  senior: Crown,
+  supervisor: Crown,
+};
 
 interface Referral {
   id: string;
@@ -321,6 +336,7 @@ function RegisterDialog({ open, onOpenChange, onSwitchToLogin }: {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [regLicencia, setRegLicencia] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -343,13 +359,13 @@ function RegisterDialog({ open, onOpenChange, onSwitchToLogin }: {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, licencia: regLicencia }),
       });
       const data = await res.json();
       if (!res.ok) {
         toast({ title: 'Error', description: data.error, variant: 'destructive' });
       } else {
-        toast({ title: 'Registro exitoso', description: `Bienvenido/a ${data.user.name}. Revisa tus comisiones.` });
+        toast({ title: 'Registro exitoso', description: `Bienvenido/a ${data.user.name}. Licencia: ${regLicencia ? LICENCIAS.find(l => l.id === regLicencia)?.label : 'N/A'}.` });
         onOpenChange(false);
         setName(''); setEmail(''); setPassword('');
         window.location.reload();
@@ -369,7 +385,7 @@ function RegisterDialog({ open, onOpenChange, onSwitchToLogin }: {
             Crear Cuenta
           </DialogTitle>
           <DialogDescription className="text-[#848E9C]">
-            Regístrate para ver tus comisiones del 5% por referidos.
+            Regístrate como Miembro Ejecutivo GCRM y accede a tu panel de comisiones.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleRegister} className="space-y-4 mt-4">
@@ -393,8 +409,33 @@ function RegisterDialog({ open, onOpenChange, onSwitchToLogin }: {
               </button>
             </div>
           </div>
+          {/* Licencia dropdown */}
+          <div className="space-y-2">
+            <Label className="text-sm text-[#EAECEF] flex items-center gap-2">
+              <Crown className="w-4 h-4 text-[#F0B90B]" />
+              Licencia Ejecutiva
+            </Label>
+            <Select value={regLicencia} onValueChange={setRegLicencia}>
+              <SelectTrigger className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] rounded-xl h-11 text-sm">
+                <SelectValue placeholder="Selecciona tu licencia" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#1E2329] border-[#2B3139]">
+                {LICENCIAS.map((l) => (
+                  <SelectItem key={l.id} value={l.id} className="text-[#EAECEF] focus:bg-[#2B3139] focus:text-[#F0B90B]">
+                    <span className="flex items-center justify-between w-full gap-4">
+                      <span>{l.label}</span>
+                      <span className="text-[#F0B90B] font-semibold">{l.price}</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {regLicencia && (
+              <p className="text-xs text-[#848E9C]">Licencia seleccionada: <span className="text-[#F0B90B] font-medium">{LICENCIAS.find(l => l.id === regLicencia)?.label} - {LICENCIAS.find(l => l.id === regLicencia)?.price}</span></p>
+            )}
+          </div>
           <Button type="submit" disabled={loading} className="w-full bg-[#F0B90B] hover:bg-[#F8D12F] text-[#0B0E11] font-bold rounded-xl h-11 text-sm transition-all disabled:opacity-50">
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Crear Cuenta'}
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Crear Cuenta Ejecutiva'}
           </Button>
           <p className="text-center text-sm text-[#848E9C]">
             ¿Ya tienes cuenta?{' '}
@@ -489,7 +530,10 @@ function Dashboard({ user, onLogout }: { user: SessionUser; onLogout: () => void
             <h1 className="text-2xl md:text-3xl font-bold text-[#EAECEF] mb-2">
               Panel de <span className="text-gold-gradient">Comisiones</span>
             </h1>
-            <p className="text-[#848E9C] text-sm">Bienvenido/a, <span className="text-[#EAECEF] font-medium">{user.name}</span>. Aquí puedes ver tus ganancias por referidos.</p>
+            <p className="text-[#848E9C] text-sm">Bienvenido/a, <span className="text-[#EAECEF] font-medium">{user.name}</span>{user.licencia && (<>
+              {' '}<Badge className="bg-[#F0B90B]/10 text-[#F0B90B] border-[#F0B90B]/20 text-xs ml-1">
+                {LICENCIAS.find(l => l.id === user.licencia)?.label || user.licencia}
+              </Badge></>)}.</p>
           </div>
 
           {/* Stats Grid */}
@@ -664,6 +708,7 @@ function StatCard({ icon: Icon, title, value, subtitle, color }: {
 function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister: () => void }) {
   const [formData, setFormData] = useState({ nombres: '', correo: '', red: '', linkReferido: '', oficinaVirtual: '' });
   const [selectedNetwork, setSelectedNetwork] = useState('');
+  const [selectedLicencia, setSelectedLicencia] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -725,21 +770,22 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
                   <span className="text-[#F0B90B] text-xs font-medium">Listado en múltiples exchanges</span>
                 </div>
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-6">
-                  <span className="text-[#EAECEF]">Regístrate en</span><br />
+                  <span className="text-[#EAECEF]">MIEMBROS EJECUTIVOS</span><br />
                   <span className="text-gold-gradient">GCRM Exchange</span>
                 </h1>
                 <p className="text-[#848E9C] text-base md:text-lg leading-relaxed mb-8 max-w-lg mx-auto lg:mx-0">
-                  Deposita USDT y recibe una comisión del <span className="text-[#F0B90B] font-semibold">5%</span> por cada registro.
-                  GCRM está disponible en Binance, Coinbase, MEXC, KuCoin y más.
+                  Registro oficial de Miembros Ejecutivos. Licencias desde <span className="text-[#F0B90B] font-semibold">$150</span>.
+                  Recibe comisión del <span className="text-[#F0B90B] font-semibold">5%</span> por cada registro referido.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
+                  <Button onClick={() => { toast({ title: 'Airdrop GCRM', description: 'Conectando al Airdrop... Se redirigirá a la plataforma de Airdrop.' }); }} size="lg"
+                    className="w-full sm:w-auto bg-gradient-to-r from-[#F0B90B] to-[#F8D12F] hover:from-[#F8D12F] hover:to-[#F0B90B] text-[#0B0E11] font-bold rounded-xl px-8 py-6 text-base gap-2 transition-all hover:shadow-lg hover:shadow-[#F0B90B]/20">
+                    <Plane className="w-5 h-5" />
+                    Airdrop GCRM
+                  </Button>
                   <Button onClick={onRegister} size="lg"
                     className="w-full sm:w-auto bg-[#F0B90B] hover:bg-[#F8D12F] text-[#0B0E11] font-bold rounded-xl px-8 py-6 text-base animate-pulse-gold">
-                    Comenzar Ahora <ArrowRight className="w-5 h-5 ml-2" />
-                  </Button>
-                  <Button variant="outline" size="lg" onClick={() => document.getElementById('exchanges')?.scrollIntoView({ behavior: 'smooth' })}
-                    className="w-full sm:w-auto border-[#2B3139] text-[#EAECEF] hover:bg-[#1E2329] rounded-xl px-8 py-6 text-base">
-                    Ver Exchanges
+                    Registro Ejecutivo <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                 </div>
               </div>
@@ -780,9 +826,9 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
                   <span className="text-[#F0B90B] text-sm font-medium uppercase tracking-wider">Formulario de Registro</span>
                 </div>
                 <h2 className="text-2xl md:text-3xl font-bold text-[#EAECEF] mb-3">
-                  Crea tu Cuenta <span className="text-gold-gradient">GCRM</span>
+                  Registro Miembros Ejecutivos <span className="text-gold-gradient">GCRM</span>
                 </h2>
-                <p className="text-[#848E9C] text-sm">Completa el formulario para registrarte y recibir tu comisión del 5%.</p>
+                <p className="text-[#848E9C] text-sm">Selecciona tu licencia ejecutiva y completa el registro para acceder a comisiones del 5%.</p>
               </div>
               <form onSubmit={handleSubmit} className="glass-card rounded-2xl p-6 md:p-8 space-y-6">
                 <div className="space-y-2">
@@ -830,6 +876,42 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
                   </Label>
                   <Input id="oficinaVirtual" type="text" placeholder="URL de tu oficina virtual" value={formData.oficinaVirtual} onChange={(e) => setFormData((p) => ({ ...p, oficinaVirtual: e.target.value }))}
                     className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm" />
+                </div>
+                {/* Licencia Ejecutiva */}
+                <div className="space-y-2">
+                  <Label className="text-[#EAECEF] text-sm font-medium flex items-center gap-2">
+                    <Crown className="w-4 h-4 text-[#F0B90B]" />
+                    Licencia Ejecutiva
+                  </Label>
+                  <Select value={selectedLicencia} onValueChange={setSelectedLicencia}>
+                    <SelectTrigger className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] rounded-xl h-12 text-sm">
+                      <SelectValue placeholder="Selecciona tu nivel de licencia" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1E2329] border-[#2B3139]">
+                      {LICENCIAS.map((l) => (
+                        <SelectItem key={l.id} value={l.id} className="text-[#EAECEF] focus:bg-[#2B3139] focus:text-[#F0B90B]">
+                          <span className="flex items-center justify-between w-full gap-6">
+                            <span className="flex items-center gap-2">
+                              {l.id === 'supervisor' && <Crown className="w-4 h-4 text-[#F0B90B]" />}
+                              {l.id === 'senior' && <Award className="w-4 h-4 text-[#F0B90B]" />}
+                              {l.id === 'coordinador' && <Star className="w-4 h-4 text-[#F0B90B]" />}
+                              {l.id === 'promotor' && <Star className="w-3 h-3 text-[#F0B90B]" />}
+                              {l.label}
+                            </span>
+                            <span className="text-[#F0B90B] font-bold">{l.price}</span>
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedLicencia && (
+                    <div className="flex items-center gap-2 p-3 bg-[#0B0E11] rounded-lg border border-[#2B3139]">
+                      <CheckCircle className="w-4 h-4 text-[#0ECB81] shrink-0" />
+                      <p className="text-xs text-[#848E9C]">
+                        Licencia <span className="text-[#F0B90B] font-semibold">{LICENCIAS.find(l => l.id === selectedLicencia)?.label}</span> - Inversión: <span className="text-[#EAECEF] font-semibold">{LICENCIAS.find(l => l.id === selectedLicencia)?.price} USDT</span>
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-[#F0B90B]/10 to-[#F0B90B]/5 rounded-xl border border-[#F0B90B]/20">
                   <Gift className="w-6 h-6 text-[#F0B90B] shrink-0" />

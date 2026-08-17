@@ -4,7 +4,7 @@ import { hashPassword, createSession } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, password, referredById, linkReferido, oficinaVirtual } = await req.json();
+    const { name, email, password, licencia, referredById } = await req.json();
 
     if (!name || !email || !password) {
       return NextResponse.json({ error: 'Nombre, correo y contraseña son requeridos.' }, { status: 400 });
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     }
 
     const user = await db.user.create({
-      data: { name, email, password: hashed },
+      data: { name, email, password: hashed, licencia: licencia || '' },
     });
 
     await createSession({ id: user.id, name: user.name, email: user.email, role: user.role });

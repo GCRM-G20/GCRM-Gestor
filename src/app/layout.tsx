@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GCRM Exchange - Registro y Depósito USDT",
-  description: "Regístrate en GCRM Exchange. Deposita USDT y recibe una comisión del 5% por registro. Listado en múltiples exchanges.",
+  title: "GCRM Exchange - Registro Miembros Ejecutivos",
+  description: "Registro oficial de Miembros Ejecutivos GCRM. Licencias: Promotor, Coordinador, Senior, Supervisor. Comisión del 5% por referidos.",
   icons: {
     icon: "/assets/gcrm-coin.png",
   },

@@ -16,6 +16,7 @@ model User {
   email     String   @unique
   password  String
   role      String   @default("user")
+  licencia  String   @default("") // promotor, coordinador, senior, supervisor
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
