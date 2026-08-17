@@ -20,6 +20,8 @@ model User {
   licencia       String   @default("") // promotor, coordinador, senior, supervisor
   paymentHash    String   @default("") // hash de pago USDT
   tradingPackage String   @default("") // 2000 GCRM, 4000 GCRM, 8000 GCRM, 16000 GCRM
+  usdtWallet     String   @default("") // billetera USDT del miembro para recibir comisiones
+  usdtNetwork    String   @default("") // red de la billetera: bep20, trx, sol
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

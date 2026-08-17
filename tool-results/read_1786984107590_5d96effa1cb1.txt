@@ -1,0 +1,624 @@
+   750→                        <td className="px-4 py-3 hidden sm:table-cell">
+   751→                          <p className="text-[#848E9C] text-xs">{fmtDate(u.createdAt)}</p>
+   752→                        </td>
+   753→                        <td className="px-4 py-3 text-center">
+   754→                          <Badge className={u.role === 'admin' ? 'bg-red-500/10 text-red-400 border-red-500/20 text-xs' : 'bg-[#2B3139] text-[#848E9C] text-xs'}>
+   755→                            {u.role === 'admin' ? 'Admin' : 'User'}
+   756→                          </Badge>
+   757→                        </td>
+   758→                        <td className="px-4 py-3">
+   759→                          <div className="flex items-center justify-center gap-1">
+   760→                            <button
+   761→                              onClick={() => handleToggleRole(u.id, u.role)}
+   762→                              disabled={actionLoading === u.id}
+   763→                              className="p-1.5 rounded-lg hover:bg-[#2B3139] transition-colors disabled:opacity-50"
+   764→                              title={u.role === 'admin' ? 'Quitar admin' : 'Hacer admin'}
+   765→                            >
+   766→                              {actionLoading === u.id ? <Loader2 className="w-4 h-4 animate-spin text-[#848E9C]" /> : <ShieldCheck className={`w-4 h-4 ${u.role === 'admin' ? 'text-red-400' : 'text-[#0ECB81]'}`} />}
+   767→                            </button>
+   768→                            <button
+   769→                              onClick={() => handleDelete(u.id, u.name)}
+   770→                              disabled={actionLoading === u.id}
+   771→                              className="p-1.5 rounded-lg hover:bg-red-500/10 transition-colors disabled:opacity-50"
+   772→                              title="Eliminar usuario"
+   773→                            >
+   774→                              <Trash2 className="w-4 h-4 text-[#848E9C] hover:text-red-400" />
+   775→                            </button>
+   776→                          </div>
+   777→                        </td>
+   778→                      </tr>
+   779→                    ))}
+   780→                  </tbody>
+   781→                </table>
+   782→              </div>
+   783→            )}
+   784→            <div className="p-4 border-t border-[#2B3139] text-center">
+   785→              <span className="text-[#5E6673] text-xs">{filtered.length} de {users.length} usuarios</span>
+   786→            </div>
+   787→          </div>
+   788→        </div>
+   789→      </main>
+   790→    </div>
+   791→  );
+   792→}
+   793→
+   794→/* ─── COMMISSIONS DASHBOARD ─── */
+   795→
+   796→function Dashboard({ user, onLogout }: { user: SessionUser; onLogout: () => void }) {
+   797→  const [stats, setStats] = useState<ReferralStats | null>(null);
+   798→  const [referrals, setReferrals] = useState<Referral[]>([]);
+   799→  const [loading, setLoading] = useState(true);
+   800→  const [loggingOut, setLoggingOut] = useState(false);
+   801→  const [showAdmin, setShowAdmin] = useState(false);
+   802→  const { toast } = useToast();
+   803→
+   804→  useEffect(() => {
+   805→    let cancelled = false;
+   806→    const load = async () => {
+   807→      try {
+   808→        const res = await fetch('/api/referrals');
+   809→        if (res.ok && !cancelled) {
+   810→          const data = await res.json();
+   811→          setStats(data.stats);
+   812→          setReferrals(data.referrals);
+   813→        }
+   814→      } catch {
+   815→        if (!cancelled) toast({ title: 'Error', description: 'No se pudieron cargar las comisiones.', variant: 'destructive' });
+   816→      }
+   817→      if (!cancelled) setLoading(false);
+   818→    };
+   819→    load();
+   820→    return () => { cancelled = true; };
+   821→  }, [toast]);
+   822→
+   823→  const handleLogout = async () => {
+   824→    setLoggingOut(true);
+   825→    try {
+   826→      await fetch('/api/auth/logout', { method: 'POST' });
+   827→      toast({ title: 'Sesión cerrada', description: 'Has cerrado sesión correctamente.' });
+   828→      onLogout();
+   829→      window.location.reload();
+   830→    } catch {
+   831→      toast({ title: 'Error', description: 'No se pudo cerrar sesión.', variant: 'destructive' });
+   832→    }
+   833→    setLoggingOut(false);
+   834→  };
+   835→
+   836→  const statusConfig: Record<string, { color: string; bg: string; icon: typeof CheckCircle; label: string }> = {
+   837→    confirmed: { color: 'text-[#0ECB81]', bg: 'bg-[#0ECB81]/10', icon: CheckCircle, label: 'Confirmado' },
+   838→    paid: { color: 'text-[#F0B90B]', bg: 'bg-[#F0B90B]/10', icon: DollarSign, label: 'Pagado' },
+   839→    pending: { color: 'text-[#FCD535]', bg: 'bg-[#FCD535]/10', icon: Clock, label: 'Pendiente' },
+   840→  };
+   841→
+   842→  const formatDate = (dateStr: string) => {
+   843→    return new Date(dateStr).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+   844→  };
+   845→
+   846→  if (showAdmin) {
+   847→    return <AdminPanel onClose={() => setShowAdmin(false)} />;
+   848→  }
+   849→
+   850→  return (
+   851→    <div className="min-h-screen bg-[#0B0E11] flex flex-col">
+   852→      {/* Dashboard Navbar */}
+   853→      <header className="sticky top-0 z-50 bg-[#0B0E11]/95 backdrop-blur-md border-b border-[#2B3139]">
+   854→        <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
+   855→          <div className="flex items-center">
+   856→            <img src="/assets/gcrm-logo.png" alt="GCRM Logo" className="h-9 md:h-10 w-auto object-contain" />
+   857→          </div>
+   858→          <div className="flex items-center gap-3">
+   859→            {user.role === 'admin' && (
+   860→              <Button onClick={() => setShowAdmin(true)} variant="outline"
+   861→                className="border-[#F0B90B]/30 text-[#F0B90B] hover:bg-[#F0B90B]/10 rounded-lg text-sm gap-2">
+   862→                <ShieldCheck className="w-4 h-4" />
+   863→                <span className="hidden sm:inline">Admin</span>
+   864→              </Button>
+   865→            )}
+   866→            <div className="hidden sm:flex items-center gap-2 text-sm text-[#848E9C]">
+   867→              <User className="w-4 h-4" />
+   868→              <span>{user.name}</span>
+   869→            </div>
+   870→            <Button onClick={handleLogout} disabled={loggingOut} variant="outline"
+   871→              className="border-[#2B3139] text-[#848E9C] hover:text-red-400 hover:border-red-400/30 rounded-lg text-sm gap-2">
+   872→              {loggingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+   873→              <span className="hidden sm:inline">Salir</span>
+   874→            </Button>
+   875→          </div>
+   876→        </div>
+   877→      </header>
+   878→
+   879→      <main className="flex-1 py-8 md:py-12">
+   880→        <div className="max-w-7xl mx-auto px-4 md:px-6">
+   881→          {/* Welcome Header */}
+   882→          <div className="mb-8">
+   883→            <h1 className="text-2xl md:text-3xl font-bold text-[#EAECEF] mb-2">
+   884→              Panel de <span className="text-gold-gradient">Comisiones</span>
+   885→            </h1>
+   886→            <p className="text-[#848E9C] text-sm">Bienvenido/a, <span className="text-[#EAECEF] font-medium">{user.name}</span>{user.licencia && (<>
+   887→              {' '}<Badge className="bg-[#F0B90B]/10 text-[#F0B90B] border-[#F0B90B]/20 text-xs ml-1">
+   888→                {LICENCIAS.find(l => l.id === user.licencia)?.label || user.licencia}
+   889→              </Badge></>)}.</p>
+   890→          </div>
+   891→
+   892→          {/* Stats Grid */}
+   893→          {loading ? (
+   894→            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+   895→              {[...Array(4)].map((_, i) => (
+   896→                <div key={i} className="glass-card rounded-2xl p-5 animate-pulse">
+   897→                  <div className="w-10 h-10 rounded-xl bg-[#2B3139] mb-3" />
+   898→                  <div className="h-4 bg-[#2B3139] rounded w-20 mb-2" />
+   899→                  <div className="h-7 bg-[#2B3139] rounded w-28" />
+   900→                </div>
+   901→              ))}
+   902→            </div>
+   903→          ) : stats ? (
+   904→            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+   905→              <StatCard icon={DollarSign} title="Comisión Total" value={`$${stats.totalCommissions.toFixed(2)}`} subtitle={`${stats.totalReferrals} referidos`} color="#F0B90B" />
+   906→              <StatCard icon={CheckCircle} title="Confirmadas" value={`$${stats.confirmedCommissions.toFixed(2)}`} subtitle="Listas para cobrar" color="#0ECB81" />
+   907→              <StatCard icon={DollarSign} title="Pagadas" value={`$${stats.paidCommissions.toFixed(2)}`} subtitle="Ya depositadas" color="#2EB6EA" />
+   908→              <StatCard icon={Clock} title="Pendientes" value={`$${stats.pendingCommissions.toFixed(2)}`} subtitle="Esperando depósito" color="#FCD535" />
+   909→            </div>
+   910→          ) : null}
+   911→
+   912→          {/* Commission Rate Highlight */}
+   913→          <div className="glass-card rounded-2xl p-5 mb-8 flex flex-col sm:flex-row items-center gap-4 border-[#F0B90B]/30">
+   914→            <div className="w-14 h-14 rounded-2xl bg-[#F0B90B]/10 flex items-center justify-center shrink-0">
+   915→              <Gift className="w-7 h-7 text-[#F0B90B]" />
+   916→            </div>
+   917→            <div className="flex-1 text-center sm:text-left">
+   918→              <h3 className="text-[#F0B90B] font-bold text-base">Tu tasa de comisión: 5%</h3>
+   919→              <p className="text-[#848E9C] text-sm">Por cada referido que deposite, ganas el 5% de su depósito automáticamente.</p>
+   920→            </div>
+   921→            <Badge className="bg-[#F0B90B]/10 text-[#F0B90B] border-[#F0B90B]/20 text-sm px-3 py-1 rounded-lg">ACTIVA</Badge>
+   922→          </div>
+   923→
+   924→          {/* Referrals Table */}
+   925→          <div className="glass-card rounded-2xl overflow-hidden">
+   926→            <div className="p-5 border-b border-[#2B3139] flex items-center gap-3">
+   927→              <LayoutDashboard className="w-5 h-5 text-[#F0B90B]" />
+   928→              <h2 className="text-lg font-bold text-[#EAECEF]">Historial de Referidos</h2>
+   929→              <Badge variant="secondary" className="bg-[#2B3139] text-[#848E9C] text-xs">
+   930→                {referrals.length} registros
+   931→              </Badge>
+   932→            </div>
+   933→
+   934→            {/* Desktop Table */}
+   935→            <div className="hidden md:block overflow-x-auto">
+   936→              <table className="w-full text-sm">
+   937→                <thead>
+   938→                  <tr className="border-b border-[#2B3139]">
+   939→                    <th className="text-left px-5 py-3 text-[#848E9C] font-medium">Referido</th>
+   940→                    <th className="text-left px-5 py-3 text-[#848E9C] font-medium">Red</th>
+   941→                    <th className="text-right px-5 py-3 text-[#848E9C] font-medium">Depósito</th>
+   942→                    <th className="text-right px-5 py-3 text-[#848E9C] font-medium">Comisión (5%)</th>
+   943→                    <th className="text-center px-5 py-3 text-[#848E9C] font-medium">Estado</th>
+   944→                    <th className="text-right px-5 py-3 text-[#848E9C] font-medium">Fecha</th>
+   945→                  </tr>
+   946→                </thead>
+   947→                <tbody>
+   948→                  {referrals.length === 0 ? (
+   949→                    <tr><td colSpan={6} className="text-center py-12 text-[#848E9C]">No tienes referidos aún. Comparte tu enlace.</td></tr>
+   950→                  ) : (
+   951→                    referrals.map((ref) => {
+   952→                      const sc = statusConfig[ref.status] || statusConfig.pending;
+   953→                      const StatusIcon = sc.icon;
+   954→                      return (
+   955→                        <tr key={ref.id} className="border-b border-[#2B3139]/50 hover:bg-[#2B3139]/30 transition-colors">
+   956→                          <td className="px-5 py-4">
+   957→                            <div>
+   958→                              <p className="text-[#EAECEF] font-medium">{ref.referredName}</p>
+   959→                              <p className="text-[#848E9C] text-xs">{ref.referredEmail}</p>
+   960→                            </div>
+   961→                          </td>
+   962→                          <td className="px-5 py-4 text-[#848E9C]">{ref.depositNetwork || '-'}</td>
+   963→                          <td className="px-5 py-4 text-right text-[#EAECEF] font-medium">${(ref.depositAmount || 0).toFixed(2)}</td>
+   964→                          <td className="px-5 py-4 text-right text-[#0ECB81] font-semibold">${ref.commission.toFixed(2)}</td>
+   965→                          <td className="px-5 py-4 text-center">
+   966→                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${sc.bg} ${sc.color}`}>
+   967→                              <StatusIcon className="w-3.5 h-3.5" />
+   968→                              {sc.label}
+   969→                            </span>
+   970→                          </td>
+   971→                          <td className="px-5 py-4 text-right text-[#848E9C]">{formatDate(ref.createdAt)}</td>
+   972→                        </tr>
+   973→                      );
+   974→                    })
+   975→                  )}
+   976→                </tbody>
+   977→              </table>
+   978→            </div>
+   979→
+   980→            {/* Mobile Cards */}
+   981→            <div className="md:hidden p-4 space-y-3">
+   982→              {referrals.length === 0 ? (
+   983→                <p className="text-center py-8 text-[#848E9C]">No tienes referidos aún.</p>
+   984→              ) : (
+   985→                referrals.map((ref) => {
+   986→                  const sc = statusConfig[ref.status] || statusConfig.pending;
+   987→                  const StatusIcon = sc.icon;
+   988→                  return (
+   989→                    <div key={ref.id} className="bg-[#0B0E11] rounded-xl p-4">
+   990→                      <div className="flex items-center justify-between mb-3">
+   991→                        <div>
+   992→                          <p className="text-[#EAECEF] font-medium text-sm">{ref.referredName}</p>
+   993→                          <p className="text-[#848E9C] text-xs">{ref.referredEmail}</p>
+   994→                        </div>
+   995→                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${sc.bg} ${sc.color}`}>
+   996→                          <StatusIcon className="w-3 h-3" /> {sc.label}
+   997→                        </span>
+   998→                      </div>
+   999→                      <div className="grid grid-cols-3 gap-2 text-center">
+  1000→                        <div>
+  1001→                          <p className="text-[#848E9C] text-[10px]">Red</p>
+  1002→                          <p className="text-[#EAECEF] text-xs font-medium">{ref.depositNetwork || '-'}</p>
+  1003→                        </div>
+  1004→                        <div>
+  1005→                          <p className="text-[#848E9C] text-[10px]">Depósito</p>
+  1006→                          <p className="text-[#EAECEF] text-xs font-medium">${(ref.depositAmount || 0).toFixed(2)}</p>
+  1007→                        </div>
+  1008→                        <div>
+  1009→                          <p className="text-[#848E9C] text-[10px]">Comisión</p>
+  1010→                          <p className="text-[#0ECB81] text-xs font-bold">${ref.commission.toFixed(2)}</p>
+  1011→                        </div>
+  1012→                      </div>
+  1013→                      <p className="text-[#848E9C] text-[10px] mt-2 text-right">{formatDate(ref.createdAt)}</p>
+  1014→                    </div>
+  1015→                  );
+  1016→                })
+  1017→              )}
+  1018→            </div>
+  1019→          </div>
+  1020→        </div>
+  1021→      </main>
+  1022→
+  1023→      {/* Footer */}
+  1024→      <footer className="bg-[#0B0E11] border-t border-[#2B3139] mt-auto">
+  1025→        <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
+  1026→          <div className="flex items-center justify-between gap-4">
+  1027→            <span className="text-xs text-[#848E9C]">© 2025 GCRM Exchange. Todos los derechos reservados.</span>
+  1028→            <div className="flex items-center gap-4 text-xs text-[#848E9C]">
+  1029→              <a href="#" className="hover:text-[#F0B90B] transition-colors">Términos</a>
+  1030→              <a href="#" className="hover:text-[#F0B90B] transition-colors">Privacidad</a>
+  1031→              <a href="#" className="hover:text-[#F0B90B] transition-colors">Soporte</a>
+  1032→            </div>
+  1033→          </div>
+  1034→        </div>
+  1035→      </footer>
+  1036→    </div>
+  1037→  );
+  1038→}
+  1039→
+  1040→/* ─── STAT CARD ─── */
+  1041→
+  1042→function StatCard({ icon: Icon, title, value, subtitle, color }: {
+  1043→  icon: typeof DollarSign; title: string; value: string; subtitle: string; color: string;
+  1044→}) {
+  1045→  return (
+  1046→    <div className="glass-card rounded-2xl p-5">
+  1047→      <div className="flex items-center gap-3 mb-3">
+  1048→        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${color}15` }}>
+  1049→          <Icon className="w-5 h-5" style={{ color }} />
+  1050→        </div>
+  1051→        <span className="text-[#848E9C] text-xs font-medium uppercase tracking-wider">{title}</span>
+  1052→      </div>
+  1053→      <p className="text-2xl font-bold text-[#EAECEF] mb-1">{value}</p>
+  1054→      <p className="text-[#848E9C] text-xs">{subtitle}</p>
+  1055→    </div>
+  1056→  );
+  1057→}
+  1058→
+  1059→/* ─── DEPOSIT INFO (standalone) ─── */
+  1060→
+  1061→function DepositInfo() {
+  1062→  const [selectedNetwork, setSelectedNetwork] = useState('');
+  1063→  const selectedNet = USDT_NETWORKS.find((n) => n.id === selectedNetwork);
+  1064→  return (
+  1065→    <div className="glass-card rounded-2xl p-6 md:p-8 space-y-4">
+  1066→      <Select value={selectedNetwork} onValueChange={setSelectedNetwork}>
+  1067→        <SelectTrigger className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] rounded-xl h-12 text-sm">
+  1068→          <SelectValue placeholder="Selecciona la red de depósito" />
+  1069→        </SelectTrigger>
+  1070→        <SelectContent className="bg-[#1E2329] border-[#2B3139]">
+  1071→          {USDT_NETWORKS.map((net) => (
+  1072→            <SelectItem key={net.id} value={net.id} className="text-[#EAECEF] focus:bg-[#2B3139] focus:text-[#F0B90B]">
+  1073→              <span className="flex items-center gap-2"><span>{net.icon}</span><span>{net.label}</span></span>
+  1074→            </SelectItem>
+  1075→          ))}
+  1076→        </SelectContent>
+  1077→      </Select>
+  1078→      {selectedNet && (
+  1079→        <div className="p-4 bg-[#0B0E11] rounded-xl border border-[#2B3139]">
+  1080→          <div className="flex items-center justify-between mb-2">
+  1081→            <span className="text-[#848E9C] text-xs font-medium">{selectedNet.icon} Dirección {selectedNet.label}</span>
+  1082→            <CopyButton text={selectedNet.address} />
+  1083→          </div>
+  1084→          <p className="text-[#EAECEF] text-xs md:text-sm font-mono break-all leading-relaxed">{selectedNet.address}</p>
+  1085→        </div>
+  1086→      )}
+  1087→    </div>
+  1088→  );
+  1089→}
+  1090→
+  1091→/* ─── LANDING PAGE ─── */
+  1092→
+  1093→function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister: () => void }) {
+  1094→  const [formData, setFormData] = useState({ nombres: '', correo: '', password: '' });
+  1095→  const [showPassword, setShowPassword] = useState(false);
+  1096→  const [isSubmitting, setIsSubmitting] = useState(false);
+  1097→  const { toast } = useToast();
+  1098→
+  1099→  const handleSubmit = async (e: React.FormEvent) => {
+  1100→    e.preventDefault();
+  1101→    if (!formData.nombres.trim()) {
+  1102→      toast({ title: 'Campo requerido', description: 'Por favor ingresa tu nombre completo.', variant: 'destructive' });
+  1103→      return;
+  1104→    }
+  1105→    if (!formData.correo.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.correo)) {
+  1106→      toast({ title: 'Correo inválido', description: 'Por favor ingresa un correo electrónico válido.', variant: 'destructive' });
+  1107→      return;
+  1108→    }
+  1109→    if (!formData.password || formData.password.length < 6) {
+  1110→      toast({ title: 'Contraseña corta', description: 'Mínimo 6 caracteres.', variant: 'destructive' });
+  1111→      return;
+  1112→    }
+  1113→    setIsSubmitting(true);
+  1114→    try {
+  1115→      const res = await fetch('/api/auth/register', {
+  1116→        method: 'POST',
+  1117→        headers: { 'Content-Type': 'application/json' },
+  1118→        body: JSON.stringify({ name: formData.nombres, email: formData.correo, password: formData.password }),
+  1119→      });
+  1120→      const data = await res.json();
+  1121→      if (!res.ok) {
+  1122→        toast({ title: 'Error', description: data.error, variant: 'destructive' });
+  1123→      } else {
+  1124→        toast({ title: 'Registro exitoso', description: `Bienvenido/a ${data.user.name}.` });
+  1125→        window.location.reload();
+  1126→      }
+  1127→    } catch {
+  1128→      toast({ title: 'Error', description: 'No se pudo conectar al servidor.', variant: 'destructive' });
+  1129→    }
+  1130→    setIsSubmitting(false);
+  1131→  };
+  1132→
+  1133→  return (
+  1134→    <div className="min-h-screen bg-[#0B0E11] flex flex-col">
+  1135→      {/* Navbar */}
+  1136→      <header className="sticky top-0 z-50 bg-[#0B0E11]/95 backdrop-blur-md border-b border-[#2B3139]">
+  1137→        <nav className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
+  1138→          <div className="flex items-center">
+  1139→            <img src="/assets/gcrm-logo.png" alt="GCRM Logo" className="h-9 md:h-10 w-auto object-contain" />
+  1140→          </div>
+  1141→          <div className="hidden md:flex items-center gap-6 text-sm text-[#848E9C]">
+  1142→            <a href="#form" className="hover:text-[#F0B90B] transition-colors">Registro</a>
+  1143→            <a href="#deposit" className="hover:text-[#F0B90B] transition-colors">Depositar</a>
+  1144→            <a href="#exchanges" className="hover:text-[#F0B90B] transition-colors">Exchanges</a>
+  1145→            <a href="#hotcoin" className="hover:text-[#F0B90B] transition-colors">Hotcoin</a>
+  1146→          </div>
+  1147→          <div className="flex items-center gap-2">
+  1148→            <Button onClick={onLogin} variant="outline" className="border-[#2B3139] text-[#EAECEF] hover:bg-[#1E2329] rounded-lg text-sm gap-2">
+  1149→              <LogIn className="w-4 h-4" />
+  1150→              <span className="hidden sm:inline">Ingresar</span>
+  1151→            </Button>
+  1152→          </div>
+  1153→        </nav>
+  1154→      </header>
+  1155→
+  1156→      <main className="flex-1">
+  1157→        {/* Hero */}
+  1158→        <section className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0a0d12 0%, #0f1923 30%, #0B0E11 60%, #0d1117 100%)' }}>
+  1159→          {/* Animated particle network */}
+  1160→          <ParticleBackground />
+  1161→          {/* Subtle radial glow */}
+  1162→          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 70% 40%, rgba(240, 185, 11, 0.06) 0%, transparent 60%), radial-gradient(ellipse at 20% 80%, rgba(14, 203, 129, 0.04) 0%, transparent 50%)' }} />
+  1163→          <div className="relative max-w-7xl mx-auto px-4 md:px-6 py-16 md:py-24 lg:py-32" style={{ zIndex: 2 }}>
+  1164→            <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+  1165→              <div className="flex-1 text-center lg:text-left animate-fade-in-up">
+  1166→                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#F0B90B]/10 border border-[#F0B90B]/20 mb-6">
+  1167→                  <div className="w-2 h-2 rounded-full bg-[#0ECB81] animate-pulse" />
+  1168→                  <span className="text-[#F0B90B] text-xs font-medium">Listado en múltiples exchanges</span>
+  1169→                </div>
+  1170→                <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-6">
+  1171→                  <span className="text-[#EAECEF]">MIEMBROS EJECUTIVOS</span><br />
+  1172→                  <span className="text-gold-gradient">GCRM Exchange</span>
+  1173→                </h1>
+  1174→                <p className="text-[#848E9C] text-base md:text-lg leading-relaxed mb-8 max-w-lg mx-auto lg:mx-0">
+  1175→                  Registro oficial de Miembros Ejecutivos. Licencias desde <span className="text-[#F0B90B] font-semibold">$150</span>.
+  1176→                  Recibe comisión del <span className="text-[#F0B90B] font-semibold">5%</span> por cada registro referido.
+  1177→                </p>
+  1178→                <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
+  1179→                  <Button onClick={() => { toast({ title: 'Airdrop GCRM', description: 'Conectando al Airdrop... Se redirigirá a la plataforma de Airdrop.' }); }} size="lg"
+  1180→                    className="w-full sm:w-auto bg-gradient-to-r from-[#F0B90B] to-[#F8D12F] hover:from-[#F8D12F] hover:to-[#F0B90B] text-[#0B0E11] font-bold rounded-xl px-8 py-6 text-base gap-2 transition-all hover:shadow-lg hover:shadow-[#F0B90B]/20">
+  1181→                    <Plane className="w-5 h-5" />
+  1182→                    Airdrop GCRM
+  1183→                  </Button>
+  1184→                  <Button onClick={onRegister} size="lg"
+  1185→                    className="w-full sm:w-auto bg-[#F0B90B] hover:bg-[#F8D12F] text-[#0B0E11] font-bold rounded-xl px-8 py-6 text-base animate-pulse-gold">
+  1186→                    Registro Ejecutivo <ArrowRight className="w-5 h-5 ml-2" />
+  1187→                  </Button>
+  1188→                </div>
+  1189→              </div>
+  1190→              <div className="shrink-0 animate-coin-container">
+  1191→                <div className="relative">
+  1192→                  <img src="/assets/gcrm-coin.png" alt="GCRM Coin" className="w-48 h-48 md:w-64 md:h-64 lg:w-72 lg:h-72 object-contain animate-coin-glow relative z-10" />
+  1193→                </div>
+  1194→              </div>
+  1195→            </div>
+  1196→          </div>
+  1197→        </section>
+  1198→
+  1199→        {/* Features */}
+  1200→        <section className="py-16 md:py-20 bg-[#0B0E11]">
+  1201→          <div className="max-w-7xl mx-auto px-4 md:px-6">
+  1202→            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+  1203→              {FEATURES.map((f, i) => (
+  1204→                <div key={f.title} className="glass-card rounded-2xl p-6 hover:border-[#F0B90B]/30 transition-all duration-300 group">
+  1205→                  <div className="w-12 h-12 rounded-xl bg-[#F0B90B]/10 flex items-center justify-center mb-4 group-hover:bg-[#F0B90B]/20 transition-colors">
+  1206→                    <f.icon className="w-6 h-6 text-[#F0B90B]" />
+  1207→                  </div>
+  1208→                  <h3 className="text-[#EAECEF] font-bold text-base mb-2">{f.title}</h3>
+  1209→                  <p className="text-[#848E9C] text-sm leading-relaxed">{f.desc}</p>
+  1210→                </div>
+  1211→              ))}
+  1212→            </div>
+  1213→          </div>
+  1214→        </section>
+  1215→
+  1216→        {/* Registration Form */}
+  1217→        <section id="form" className="py-16 md:py-20 bg-[#0B0E11]">
+  1218→          <div className="max-w-7xl mx-auto px-4 md:px-6">
+  1219→            <div className="max-w-2xl mx-auto">
+  1220→              <div className="text-center mb-10">
+  1221→                <div className="inline-flex items-center gap-2 mb-4">
+  1222→                  <Wallet className="w-5 h-5 text-[#F0B90B]" />
+  1223→                  <span className="text-[#F0B90B] text-sm font-medium uppercase tracking-wider">Formulario de Registro</span>
+  1224→                </div>
+  1225→                <h2 className="text-2xl md:text-3xl font-bold text-[#EAECEF] mb-3">
+  1226→                  Registro Miembros Ejecutivos <span className="text-gold-gradient">GCRM</span>
+  1227→                </h2>
+  1228→                <p className="text-[#848E9C] text-sm">Selecciona tu licencia ejecutiva y completa el registro para acceder a comisiones del 5%.</p>
+  1229→              </div>
+  1230→              <form onSubmit={handleSubmit} className="glass-card rounded-2xl p-6 md:p-8 space-y-5">
+  1231→                {/* Nombre */}
+  1232→                <div className="space-y-2">
+  1233→                  <Label htmlFor="nombres" className="text-[#EAECEF] text-sm font-medium">Nombre Completo <span className="text-red-400">*</span></Label>
+  1234→                  <Input id="nombres" type="text" placeholder="Tu nombre" value={formData.nombres} onChange={(e) => setFormData((p) => ({ ...p, nombres: e.target.value }))}
+  1235→                    className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm" />
+  1236→                </div>
+  1237→                {/* Correo */}
+  1238→                <div className="space-y-2">
+  1239→                  <Label htmlFor="correo" className="text-[#EAECEF] text-sm font-medium">Correo Electrónico <span className="text-red-400">*</span></Label>
+  1240→                  <Input id="correo" type="email" placeholder="tucorreo@ejemplo.com" value={formData.correo} onChange={(e) => setFormData((p) => ({ ...p, correo: e.target.value }))}
+  1241→                    className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm" />
+  1242→                </div>
+  1243→                {/* Contraseña */}
+  1244→                <div className="space-y-2">
+  1245→                  <Label htmlFor="password" className="text-[#EAECEF] text-sm font-medium">Contraseña <span className="text-red-400">*</span></Label>
+  1246→                  <div className="relative">
+  1247→                    <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="Mínimo 6 caracteres" value={formData.password} onChange={(e) => setFormData((p) => ({ ...p, password: e.target.value }))}
+  1248→                      className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm pr-10" />
+  1249→                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#848E9C] hover:text-[#EAECEF] transition-colors">
+  1250→                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+  1251→                    </button>
+  1252→                  </div>
+  1253→                </div>
+  1254→                <Button type="submit" disabled={isSubmitting}
+  1255→                  className="w-full bg-[#F0B90B] hover:bg-[#F8D12F] text-[#0B0E11] font-bold rounded-xl h-12 text-base transition-all disabled:opacity-50">
+  1256→                  {isSubmitting ? (
+  1257→                    <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Registrando...</span>
+  1258→                  ) : (
+  1259→                    <span className="flex items-center justify-center gap-2">Registrarme Ahora</span>
+  1260→                  )}
+  1261→                </Button>
+  1262→                <p className="text-center text-xs text-[#5E6673]">
+  1263→                  Al registrarte aceptas los términos de GCRM Exchange.
+  1264→                </p>
+  1265→              </form>
+  1266→            </div>
+  1267→          </div>
+  1268→        </section>
+  1269→
+  1270→        {/* Info: Depositar USDT */}
+  1271→        <section id="deposit" className="py-16 md:py-20 bg-[#0B0E11]">
+  1272→          <div className="max-w-2xl mx-auto px-4 md:px-6">
+  1273→            <div className="text-center mb-8">
+  1274→              <h2 className="text-xl md:text-2xl font-bold text-[#EAECEF] mb-2">
+  1275→                Deposita <span className="text-gold-gradient">USDT</span>
+  1276→              </h2>
+  1277→              <p className="text-[#848E9C] text-sm">Selecciona la red y copia la dirección para tu depósito.</p>
+  1278→            </div>
+  1279→            <DepositInfo />
+  1280→          </div>
+  1281→        </section>
+  1282→
+  1283→        {/* Exchanges Carousel */}
+  1284→        <section id="exchanges" className="py-16 md:py-20 bg-[#0B0E11]">
+  1285→          <div className="max-w-7xl mx-auto px-4 md:px-6"><ExchangeCarousel /></div>
+  1286→        </section>
+  1287→
+  1288→        {/* Hotcoin */}
+  1289→        <section id="hotcoin" className="py-16 md:py-20 bg-[#0B0E11]">
+  1290→          <div className="max-w-5xl mx-auto px-4 md:px-6"><HotcoinSection /></div>
+  1291→        </section>
+  1292→
+  1293→        {/* Bottom CTA */}
+  1294→        <section className="py-16 md:py-20 bg-[#0B0E11]">
+  1295→          <div className="max-w-4xl mx-auto px-4 md:px-6 text-center">
+  1296→            <h2 className="text-2xl md:text-3xl font-bold text-[#EAECEF] mb-4">
+  1297→              Comienza a Ganar con <span className="text-gold-gradient">GCRM</span> Hoy
+  1298→            </h2>
+  1299→            <p className="text-[#848E9C] text-base mb-8 max-w-xl mx-auto">
+  1300→              Únete a miles de usuarios que ya están generando ingresos con la comisión del 5% por registro.
+  1301→            </p>
+  1302→            <Button onClick={onRegister} size="lg" className="bg-[#F0B90B] hover:bg-[#F8D12F] text-[#0B0E11] font-bold rounded-xl px-10 py-6 text-base">
+  1303→              Registrarse Ahora <ArrowRight className="w-5 h-5 ml-2" />
+  1304→            </Button>
+  1305→          </div>
+  1306→        </section>
+  1307→      </main>
+  1308→
+  1309→      {/* Footer */}
+  1310→      <footer className="bg-[#0B0E11] border-t border-[#2B3139] mt-auto">
+  1311→        <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
+  1312→          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+  1313→            <div className="flex items-center gap-3">
+  1314→              <img src="/assets/gcrm-logo.png" alt="GCRM" className="w-6 h-6 rounded-full" />
+  1315→              <span className="text-sm text-[#848E9C]">© 2025 GCRM Exchange. Todos los derechos reservados.</span>
+  1316→            </div>
+  1317→            <div className="flex items-center gap-6 text-xs text-[#848E9C]">
+  1318→              <a href="#" className="hover:text-[#F0B90B] transition-colors">Términos</a>
+  1319→              <a href="#" className="hover:text-[#F0B90B] transition-colors">Privacidad</a>
+  1320→              <a href="#" className="hover:text-[#F0B90B] transition-colors">Soporte</a>
+  1321→            </div>
+  1322→          </div>
+  1323→        </div>
+  1324→      </footer>
+  1325→    </div>
+  1326→  );
+  1327→}
+  1328→
+  1329→/* ─── MAIN: VIEW ROUTER ─── */
+  1330→
+  1331→export default function Home() {
+  1332→  const [user, setUser] = useState<SessionUser | null>(null);
+  1333→  const [checking, setChecking] = useState(true);
+  1334→  const [showLogin, setShowLogin] = useState(false);
+  1335→  const [showRegister, setShowRegister] = useState(false);
+  1336→
+  1337→  // Check session on mount
+  1338→  useEffect(() => {
+  1339→    fetch('/api/auth/me')
+  1340→      .then((res) => res.json())
+  1341→      .then((data) => {
+  1342→        if (data.user) setUser(data.user);
+  1343→      })
+  1344→      .catch(() => {})
+  1345→      .finally(() => setChecking(false));
+  1346→  }, []);
+  1347→
+  1348→  if (checking) {
+  1349→    return (
+  1350→      <div className="min-h-screen bg-[#0B0E11] flex items-center justify-center">
+  1351→        <Loader2 className="w-8 h-8 text-[#F0B90B] animate-spin" />
+  1352→      </div>
+  1353→    );
+  1354→  }
+  1355→
+  1356→  // Logged in → Dashboard
+  1357→  if (user) {
+  1358→    return (
+  1359→      <>
+  1360→        <Dashboard user={user} onLogout={() => setUser(null)} />
+  1361→      </>
+  1362→    );
+  1363→  }
+  1364→
+  1365→  // Not logged in → Landing + Login/Register dialogs
+  1366→  return (
+  1367→    <>
+  1368→      <LandingPage onLogin={() => setShowLogin(true)} onRegister={() => setShowRegister(true)} />
+  1369→      <LoginDialog open={showLogin} onOpenChange={setShowLogin} onSwitchToRegister={() => setShowRegister(true)} />
+  1370→      <RegisterDialog open={showRegister} onOpenChange={setShowRegister} onSwitchToLogin={() => setShowLogin(true)} />
+  1371→    </>
+  1372→  );
+  1373→}

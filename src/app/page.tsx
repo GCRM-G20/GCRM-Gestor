@@ -36,6 +36,8 @@ interface SessionUser {
   email: string;
   role: string;
   licencia?: string;
+  usdtWallet?: string;
+  usdtNetwork?: string;
 }
 
 const LICENCIAS = [
@@ -801,9 +803,57 @@ function Dashboard({ user, onLogout }: { user: SessionUser; onLogout: () => void
   const [showAdmin, setShowAdmin] = useState(false);
   const { toast } = useToast();
 
+  // Wallet state
+  const [walletAddress, setWalletAddress] = useState(user.usdtWallet || '');
+  const [walletNetwork, setWalletNetwork] = useState(user.usdtNetwork || '');
+  const [savingWallet, setSavingWallet] = useState(false);
+  const [walletSaved, setWalletSaved] = useState(!!user.usdtWallet);
+
+  const loadWallet = async () => {
+    try {
+      const res = await fetch('/api/user/wallet');
+      if (res.ok) {
+        const data = await res.json();
+        setWalletAddress(data.usdtWallet || '');
+        setWalletNetwork(data.usdtNetwork || '');
+        setWalletSaved(!!data.usdtWallet);
+      }
+    } catch { /* silent */ }
+  };
+
+  const handleSaveWallet = async () => {
+    if (!walletAddress.trim()) {
+      toast({ title: 'Campo requerido', description: 'Ingresa la dirección de tu billetera USDT.', variant: 'destructive' });
+      return;
+    }
+    if (!walletNetwork) {
+      toast({ title: 'Red requerida', description: 'Selecciona la red de tu billetera.', variant: 'destructive' });
+      return;
+    }
+    setSavingWallet(true);
+    try {
+      const res = await fetch('/api/user/wallet', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usdtWallet: walletAddress.trim(), usdtNetwork: walletNetwork }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast({ title: 'Error', description: data.error, variant: 'destructive' });
+      } else {
+        toast({ title: 'Billetera guardada', description: data.message });
+        setWalletSaved(true);
+      }
+    } catch {
+      toast({ title: 'Error', description: 'No se pudo guardar la billetera.', variant: 'destructive' });
+    }
+    setSavingWallet(false);
+  };
+
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
+      loadWallet();
       try {
         const res = await fetch('/api/referrals');
         if (res.ok && !cancelled) {
@@ -919,6 +969,85 @@ function Dashboard({ user, onLogout }: { user: SessionUser; onLogout: () => void
               <p className="text-[#848E9C] text-sm">Por cada referido que deposite, ganas el 5% de su depósito automáticamente.</p>
             </div>
             <Badge className="bg-[#F0B90B]/10 text-[#F0B90B] border-[#F0B90B]/20 text-sm px-3 py-1 rounded-lg">ACTIVA</Badge>
+          </div>
+
+          {/* USDT Wallet Section */}
+          <div className="glass-card rounded-2xl p-5 md:p-6 mb-8">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-11 h-11 rounded-2xl bg-[#0ECB81]/10 flex items-center justify-center shrink-0">
+                <Wallet className="w-6 h-6 text-[#0ECB81]" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-[#EAECEF] font-bold text-base">Billetera USDT para Comisiones</h3>
+                <p className="text-[#848E9C] text-xs">Ingresa tu billetera para recibir el pago del 5% de comisión.</p>
+              </div>
+              {walletSaved && (
+                <Badge className="bg-[#0ECB81]/10 text-[#0ECB81] border-[#0ECB81]/20 text-xs px-2.5 py-0.5 rounded-full">GUARDADA</Badge>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+              <div className="space-y-2">
+                <Label className="text-sm text-[#EAECEF] flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5 text-[#848E9C]" />
+                  Red de Pago
+                </Label>
+                <Select value={walletNetwork} onValueChange={(val) => { setWalletNetwork(val); setWalletSaved(false); }}>
+                  <SelectTrigger className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] rounded-xl h-11 text-sm">
+                    <SelectValue placeholder="Selecciona red" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#1E2329] border-[#2B3139]">
+                    {USDT_NETWORKS.map((net) => (
+                      <SelectItem key={net.id} value={net.id} className="text-[#EAECEF] focus:bg-[#2B3139] focus:text-[#F0B90B]">
+                        <span className="flex items-center gap-2"><span>{net.icon}</span><span>{net.label}</span></span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="usdt-wallet" className="text-sm text-[#EAECEF] flex items-center gap-1.5">
+                  <Hash className="w-3.5 h-3.5 text-[#848E9C]" />
+                  Dirección de Billetera
+                </Label>
+                <Input
+                  id="usdt-wallet"
+                  type="text"
+                  placeholder={walletNetwork === 'trx' ? 'TXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxX' : walletNetwork === 'bep20' ? '0x...' : 'Dirección Solana...'}
+                  value={walletAddress}
+                  onChange={(e) => { setWalletAddress(e.target.value); setWalletSaved(false); }}
+                  className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#0ECB81] focus:ring-[#0ECB81]/20 rounded-xl h-11 text-sm font-mono"
+                />
+              </div>
+
+              <Button
+                onClick={handleSaveWallet}
+                disabled={savingWallet}
+                className="w-full bg-[#0ECB81] hover:bg-[#0DB874] text-[#0B0E11] font-bold rounded-xl h-11 text-sm transition-all disabled:opacity-50 gap-2"
+              >
+                {savingWallet ? <Loader2 className="w-4 h-4 animate-spin" /> : walletSaved ? <CheckCircle className="w-4 h-4" /> : <Wallet className="w-4 h-4" />}
+                {savingWallet ? 'Guardando...' : walletSaved ? 'Actualizar Billetera' : 'Guardar Billetera'}
+              </Button>
+            </div>
+
+            {walletSaved && walletAddress && walletNetwork && (
+              <div className="mt-4 p-3 bg-[#0B0E11] rounded-xl border border-[#2B3139] flex items-center gap-3">
+                <div className="shrink-0">
+                  <span className="text-xs">{USDT_NETWORKS.find(n => n.id === walletNetwork)?.icon}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[#848E9C] text-[10px] uppercase tracking-wider">Billetera activa ({USDT_NETWORKS.find(n => n.id === walletNetwork)?.label})</p>
+                  <p className="text-[#EAECEF] text-xs font-mono truncate mt-0.5">{walletAddress}</p>
+                </div>
+                <CopyButton text={walletAddress} />
+              </div>
+            )}
+
+            <p className="text-[#5E6673] text-[11px] mt-3 flex items-start gap-1.5">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              Asegúrate de que la dirección y red sean correctas. Las comisiones confirmadas se enviarán automáticamente a esta billetera.
+            </p>
           </div>
 
           {/* Referrals Table */}
