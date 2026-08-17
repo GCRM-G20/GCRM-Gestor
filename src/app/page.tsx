@@ -23,6 +23,7 @@ import {
   ArrowRight, Wallet, Globe, Users, TrendingUp, LogOut, LogIn, User,
   DollarSign, Clock, CheckCircle, AlertCircle, LayoutDashboard,
   Eye, EyeOff, Loader2, BarChart3, UserPlus, Plane, Crown, Star, Award, Hash,
+  ShieldCheck, Trash2, UsersRound, ArrowUpDown,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -547,6 +548,250 @@ function RegisterDialog({ open, onOpenChange, onSwitchToLogin }: {
   );
 }
 
+/* ─── ADMIN PANEL ─── */
+
+interface AdminUser {
+  id: string;
+  name: string;
+  username: string;
+  email: string;
+  role: string;
+  licencia: string;
+  paymentHash: string;
+  tradingPackage: string;
+  createdAt: string;
+  _count: { referrals: number };
+}
+
+interface AdminStats {
+  totalUsers: number;
+  totalReferrals: number;
+  admins: number;
+  totalCommissions: number;
+  paidCommissions: number;
+  pendingReferrals: number;
+  confirmedReferrals: number;
+  paidReferrals: number;
+  recentUsers: number;
+}
+
+function AdminPanel({ onClose }: { onClose: () => void }) {
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const loadData = async () => {
+    try {
+      const [usersRes, statsRes] = await Promise.all([
+        fetch('/api/admin/users'),
+        fetch('/api/admin/stats'),
+      ]);
+      if (usersRes.ok) {
+        const data = await usersRes.json();
+        setUsers(data.users);
+      }
+      if (statsRes.ok) {
+        const data = await statsRes.json();
+        setAdminStats(data.stats);
+      }
+    } catch {
+      toast({ title: 'Error', description: 'No se pudo cargar la información.', variant: 'destructive' });
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { loadData(); }, []);
+
+  const handleDelete = async (userId: string, name: string) => {
+    if (!confirm(`¿Estás seguro de eliminar al usuario ${name}? Esta acción no se puede deshacer.`)) return;
+    setActionLoading(userId);
+    try {
+      const res = await fetch(`/api/admin/users?id=${userId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (res.ok) {
+        toast({ title: 'Usuario eliminado', description: data.message });
+        setUsers((prev) => prev.filter((u) => u.id !== userId));
+      } else {
+        toast({ title: 'Error', description: data.error, variant: 'destructive' });
+      }
+    } catch {
+      toast({ title: 'Error', description: 'No se pudo eliminar.', variant: 'destructive' });
+    }
+    setActionLoading(null);
+  };
+
+  const handleToggleRole = async (userId: string, currentRole: string) => {
+    const newRole = currentRole === 'admin' ? 'user' : 'admin';
+    setActionLoading(userId);
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, role: newRole }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast({ title: 'Rol actualizado', description: data.message });
+        setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, role: newRole } : u));
+      } else {
+        toast({ title: 'Error', description: data.error, variant: 'destructive' });
+      }
+    } catch {
+      toast({ title: 'Error', description: 'No se pudo actualizar el rol.', variant: 'destructive' });
+    }
+    setActionLoading(null);
+  };
+
+  const filtered = users.filter(
+    (u) =>
+      u.name.toLowerCase().includes(search.toLowerCase()) ||
+      u.email.toLowerCase().includes(search.toLowerCase()) ||
+      u.username.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const fmtDate = (d: string) => new Date(d).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  return (
+    <div className="min-h-screen bg-[#0B0E11] flex flex-col">
+      <header className="sticky top-0 z-50 bg-[#0B0E11]/95 backdrop-blur-md border-b border-[#2B3139]">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img src="/assets/gcrm-logo.png" alt="GCRM" className="w-8 h-8 rounded-full" />
+            <span className="text-xl font-bold text-gold-gradient">GCRM Admin</span>
+            <Badge className="bg-red-500/10 text-red-400 border-red-500/20 text-xs"><ShieldCheck className="w-3 h-3 mr-1" />Administrador</Badge>
+          </div>
+          <Button onClick={onClose} variant="outline" className="border-[#2B3139] text-[#848E9C] hover:bg-[#1E2329] rounded-lg text-sm gap-2">
+            <ArrowRight className="w-4 h-4 rotate-180" />
+            Volver al Dashboard
+          </Button>
+        </div>
+      </header>
+
+      <main className="flex-1 py-8 md:py-12">
+        <div className="max-w-7xl mx-auto px-4 md:px-6">
+          {/* Admin Stats */}
+          {loading ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              {[...Array(8)].map((_, i) => (<div key={i} className="glass-card rounded-2xl p-5 animate-pulse"><div className="h-4 bg-[#2B3139] rounded w-16 mb-2" /><div className="h-7 bg-[#2B3139] rounded w-24" /></div>))}
+            </div>
+          ) : adminStats ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <StatCard icon={Users} title="Total Usuarios" value={String(adminStats.totalUsers)} subtitle={`${adminStats.recentUsers} nuevos (7d)`} color="#F0B90B" />
+              <StatCard icon={UsersRound} title="Total Referidos" value={String(adminStats.totalReferrals)} subtitle={`${adminStats.pendingReferrals} pendientes`} color="#0ECB81" />
+              <StatCard icon={DollarSign} title="Comisiones" value={`$${adminStats.totalCommissions.toFixed(2)}`} subtitle={`$${adminStats.paidCommissions.toFixed(2)} pagadas`} color="#2EB6EA" />
+              <StatCard icon={ShieldCheck} title="Administradores" value={String(adminStats.admins)} subtitle="Usuarios con acceso admin" color="#FCD535" />
+            </div>
+          ) : null}
+
+          {/* Controls */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <h2 className="text-xl font-bold text-[#EAECEF] flex items-center gap-2">
+              <LayoutDashboard className="w-5 h-5 text-[#F0B90B]" />
+              Gestión de Usuarios
+            </h2>
+            <Input
+              placeholder="Buscar por nombre, email o usuario..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] rounded-xl h-10 text-sm w-full sm:w-80"
+            />
+          </div>
+
+          {/* Users Table */}
+          <div className="glass-card rounded-2xl overflow-hidden">
+            {loading ? (
+              <div className="p-8 text-center text-[#848E9C]"><Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />Cargando usuarios...</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[#2B3139]">
+                      <th className="text-left px-4 py-3 text-[#848E9C] font-medium">Usuario</th>
+                      <th className="text-left px-4 py-3 text-[#848E9C] font-medium hidden md:table-cell">Email</th>
+                      <th className="text-left px-4 py-3 text-[#848E9C] font-medium hidden lg:table-cell">Licencia</th>
+                      <th className="text-left px-4 py-3 text-[#848E9C] font-medium hidden lg:table-cell">Trading</th>
+                      <th className="text-center px-4 py-3 text-[#848E9C] font-medium">Referidos</th>
+                      <th className="text-left px-4 py-3 text-[#848E9C] font-medium hidden sm:table-cell">Fecha</th>
+                      <th className="text-center px-4 py-3 text-[#848E9C] font-medium">Rol</th>
+                      <th className="text-center px-4 py-3 text-[#848E9C] font-medium">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.length === 0 ? (
+                      <tr><td colSpan={8} className="px-4 py-8 text-center text-[#5E6673]">No se encontraron usuarios.</td></tr>
+                    ) : filtered.map((u) => (
+                      <tr key={u.id} className="border-b border-[#2B3139]/50 hover:bg-[#2B3139]/30 transition-colors">
+                        <td className="px-4 py-3">
+                          <div>
+                            <p className="text-[#EAECEF] font-medium text-sm">{u.name}</p>
+                            {u.username && <p className="text-[#5E6673] text-xs">@{u.username}</p>}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 hidden md:table-cell">
+                          <p className="text-[#848E9C] text-xs">{u.email}</p>
+                        </td>
+                        <td className="px-4 py-3 hidden lg:table-cell">
+                          {u.licencia ? (
+                            <Badge className="bg-[#F0B90B]/10 text-[#F0B90B] border-[#F0B90B]/20 text-xs">
+                              {LICENCIAS.find(l => l.id === u.licencia)?.label || u.licencia}
+                            </Badge>
+                          ) : <span className="text-[#5E6673] text-xs">-</span>}
+                        </td>
+                        <td className="px-4 py-3 hidden lg:table-cell">
+                          {u.tradingPackage ? (
+                            <Badge className="bg-[#0ECB81]/10 text-[#0ECB81] border-[#0ECB81]/20 text-xs">{u.tradingPackage} GCRM</Badge>
+                          ) : <span className="text-[#5E6673] text-xs">-</span>}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="text-[#EAECEF] font-semibold">{u._count.referrals}</span>
+                        </td>
+                        <td className="px-4 py-3 hidden sm:table-cell">
+                          <p className="text-[#848E9C] text-xs">{fmtDate(u.createdAt)}</p>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <Badge className={u.role === 'admin' ? 'bg-red-500/10 text-red-400 border-red-500/20 text-xs' : 'bg-[#2B3139] text-[#848E9C] text-xs'}>
+                            {u.role === 'admin' ? 'Admin' : 'User'}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              onClick={() => handleToggleRole(u.id, u.role)}
+                              disabled={actionLoading === u.id}
+                              className="p-1.5 rounded-lg hover:bg-[#2B3139] transition-colors disabled:opacity-50"
+                              title={u.role === 'admin' ? 'Quitar admin' : 'Hacer admin'}
+                            >
+                              {actionLoading === u.id ? <Loader2 className="w-4 h-4 animate-spin text-[#848E9C]" /> : <ShieldCheck className={`w-4 h-4 ${u.role === 'admin' ? 'text-red-400' : 'text-[#0ECB81]'}`} />}
+                            </button>
+                            <button
+                              onClick={() => handleDelete(u.id, u.name)}
+                              disabled={actionLoading === u.id}
+                              className="p-1.5 rounded-lg hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                              title="Eliminar usuario"
+                            >
+                              <Trash2 className="w-4 h-4 text-[#848E9C] hover:text-red-400" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <div className="p-4 border-t border-[#2B3139] text-center">
+              <span className="text-[#5E6673] text-xs">{filtered.length} de {users.length} usuarios</span>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
 /* ─── COMMISSIONS DASHBOARD ─── */
 
 function Dashboard({ user, onLogout }: { user: SessionUser; onLogout: () => void }) {
@@ -554,6 +799,7 @@ function Dashboard({ user, onLogout }: { user: SessionUser; onLogout: () => void
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -598,6 +844,10 @@ function Dashboard({ user, onLogout }: { user: SessionUser; onLogout: () => void
     return new Date(dateStr).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
+  if (showAdmin) {
+    return <AdminPanel onClose={() => setShowAdmin(false)} />;
+  }
+
   return (
     <div className="min-h-screen bg-[#0B0E11] flex flex-col">
       {/* Dashboard Navbar */}
@@ -607,7 +857,14 @@ function Dashboard({ user, onLogout }: { user: SessionUser; onLogout: () => void
             <img src="/assets/gcrm-logo.png" alt="GCRM Logo" className="w-8 h-8 rounded-full" />
             <span className="text-xl font-bold text-gold-gradient">GCRM Exchange</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {user.role === 'admin' && (
+              <Button onClick={() => setShowAdmin(true)} variant="outline"
+                className="border-[#F0B90B]/30 text-[#F0B90B] hover:bg-[#F0B90B]/10 rounded-lg text-sm gap-2">
+                <ShieldCheck className="w-4 h-4" />
+                <span className="hidden sm:inline">Admin</span>
+              </Button>
+            )}
             <div className="hidden sm:flex items-center gap-2 text-sm text-[#848E9C]">
               <User className="w-4 h-4" />
               <span>{user.name}</span>
