@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { getDB } from '@/lib/db';
 
-// POST /api/admin/promote - Self-promote first user to admin (only if no admins exist)
 export async function POST() {
   try {
     const session = await getSession();
@@ -10,9 +9,9 @@ export async function POST() {
       return NextResponse.json({ error: 'No autenticado.' }, { status: 401 });
     }
 
-    // Only allow if no admins exist yet
-    const adminCount = await db.user.count({ where: { role: 'admin' } });
-    if (adminCount > 0) {
+    const db = await getDB();
+    const admins = await db.user.count({ where: { role: 'admin' } });
+    if (admins > 0) {
       return NextResponse.json({ error: 'Ya existe un administrador.' }, { status: 403 });
     }
 

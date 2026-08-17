@@ -1,32 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { getDB } from '@/lib/db';
 
-// GET /api/admin/users - List all users
 export async function GET() {
   try {
     const session = await getSession();
     if (!session || session.role !== 'admin') {
-      return NextResponse.json({ error: 'Acceso denegado. Se requiere rol de administrador.' }, { status: 403 });
+      return NextResponse.json({ error: 'Acceso denegado.' }, { status: 403 });
     }
 
-    const users = await db.user.findMany({
-      select: {
-        id: true, name: true, username: true, email: true, role: true, licencia: true,
-        paymentHash: true, tradingPackage: true, createdAt: true, updatedAt: true,
-        _count: { select: { referrals: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    const db = await getDB();
+    const users = await db.user.findMany({ orderBy: { createdAt: 'desc' } });
 
-    return NextResponse.json({ users });
+    const allRefs = await db.referral.findMany({});
+    const refCounts: Record<string, number> = {};
+    for (const r of allRefs) {
+      refCounts[r.userId] = (refCounts[r.userId] || 0) + 1;
+    }
+
+    const enriched = users.map((u: any) => ({ ...u, _count: { referrals: refCounts[u.id] || 0 } }));
+
+    return NextResponse.json({ users: enriched });
   } catch (error) {
     console.error('Admin list error:', error);
     return NextResponse.json({ error: 'Error interno del servidor.' }, { status: 500 });
   }
 }
 
-// DELETE /api/admin/users?id=xxx - Delete a user
 export async function DELETE(req: NextRequest) {
   try {
     const session = await getSession();
@@ -40,11 +40,11 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'ID de usuario requerido.' }, { status: 400 });
     }
 
-    // Prevent deleting yourself
     if (userId === session.id) {
       return NextResponse.json({ error: 'No puedes eliminar tu propia cuenta.' }, { status: 400 });
     }
 
+    const db = await getDB();
     await db.user.delete({ where: { id: userId } });
     return NextResponse.json({ success: true, message: 'Usuario eliminado correctamente.' });
   } catch (error) {
@@ -53,7 +53,6 @@ export async function DELETE(req: NextRequest) {
   }
 }
 
-// PATCH /api/admin/users - Update user role
 export async function PATCH(req: NextRequest) {
   try {
     const session = await getSession();
@@ -66,11 +65,11 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'userId y role son requeridos.' }, { status: 400 });
     }
 
-    const validRoles = ['user', 'admin'];
-    if (!validRoles.includes(role)) {
+    if (!['user', 'admin'].includes(role)) {
       return NextResponse.json({ error: 'Rol inválido.' }, { status: 400 });
     }
 
+    const db = await getDB();
     await db.user.update({ where: { id: userId }, data: { role } });
     return NextResponse.json({ success: true, message: `Rol actualizado a ${role}.` });
   } catch (error) {

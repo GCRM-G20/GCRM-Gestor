@@ -6,7 +6,6 @@ export async function POST() {
     await destroySession();
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Logout error:', error);
-    return NextResponse.json({ error: 'Error al cerrar sesión.' }, { status: 500 });
+    return NextResponse.json({ error: 'Error interno.' }, { status: 500 });
   }
 }

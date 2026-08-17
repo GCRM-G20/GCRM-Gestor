@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { getDB } from '@/lib/db';
 
 export async function GET() {
   try {
@@ -9,46 +9,37 @@ export async function GET() {
       return NextResponse.json({ error: 'Acceso denegado.' }, { status: 403 });
     }
 
-    const totalUsers = await db.user.count();
-    const totalReferrals = await db.referral.count();
-    const admins = await db.user.count({ where: { role: 'admin' } });
-    const totalCommissions = await db.referral.aggregate({ _sum: { commission: true } });
-    const paidCommissions = await db.referral.aggregate({ where: { status: 'paid' }, _sum: { commission: true } });
-    const pendingReferrals = await db.referral.count({ where: { status: 'pending' } });
-    const confirmedReferrals = await db.referral.count({ where: { status: 'confirmed' } });
-    const paidReferrals = await db.referral.count({ where: { status: 'paid' } });
+    const db = await getDB();
+    const allUsers = await db.user.findMany({});
+    const allRefs = await db.referral.findMany({});
 
-    // Licencia distribution
-    const licenciaDist = await db.user.groupBy({
-      by: ['licencia'],
-      _count: true,
-    });
-
-    // Trading package distribution
-    const tradingDist = await db.user.groupBy({
-      by: ['tradingPackage'],
-      _count: true,
-    });
-
-    // Recent users (last 7 days)
+    const totalUsers = allUsers.length;
+    const admins = allUsers.filter(u => u.role === 'admin').length;
     const sevenDaysAgo = new Date(Date.now() - 7 * 86400000);
-    const recentUsers = await db.user.count({
-      where: { createdAt: { gte: sevenDaysAgo } },
-    });
+    const recentUsers = allUsers.filter(u => new Date(u.createdAt) >= sevenDaysAgo).length;
+    const totalReferrals = allRefs.length;
+    const totalCommissions = allRefs.reduce((s, r) => s + r.commission, 0);
+    const paidCommissions = allRefs.filter(r => r.status === 'paid').reduce((s, r) => s + r.commission, 0);
+    const pendingReferrals = allRefs.filter(r => r.status === 'pending').length;
+    const confirmedReferrals = allRefs.filter(r => r.status === 'confirmed').length;
+    const paidReferrals = allRefs.filter(r => r.status === 'paid').length;
+
+    const licenciaMap: Record<string, number> = {};
+    const tradingMap: Record<string, number> = {};
+    for (const u of allUsers) {
+      const l = u.licencia || '';
+      const t = u.tradingPackage || '';
+      licenciaMap[l] = (licenciaMap[l] || 0) + 1;
+      tradingMap[t] = (tradingMap[t] || 0) + 1;
+    }
 
     return NextResponse.json({
       stats: {
-        totalUsers,
-        totalReferrals,
-        admins,
-        totalCommissions: totalCommissions._sum.commission || 0,
-        paidCommissions: paidCommissions._sum.commission || 0,
-        pendingReferrals,
-        confirmedReferrals,
-        paidReferrals,
-        recentUsers,
-        licenciaDistribution: licenciaDist,
-        tradingDistribution: tradingDist,
+        totalUsers, totalReferrals, admins,
+        totalCommissions, paidCommissions,
+        pendingReferrals, confirmedReferrals, paidReferrals, recentUsers,
+        licenciaDistribution: Object.entries(licenciaMap).map(([licencia, _count]) => ({ licencia, _count })),
+        tradingDistribution: Object.entries(tradingMap).map(([tradingPackage, _count]) => ({ tradingPackage, _count })),
       },
     });
   } catch (error) {
