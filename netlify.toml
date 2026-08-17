@@ -1,5 +1,5 @@
 [build]
-  command = "npx next build"
+  command = "DATABASE_URL='postgresql://postgres.fiyodooqhoiewgthyrmh:GCRM%40999consultor@aws-0-us-east-2.pooler.supabase.com:6543/postgres' npx prisma generate && npx next build"
   publish = ".next"
 
 [[plugins]]
