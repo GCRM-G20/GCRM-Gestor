@@ -36,7 +36,12 @@ export interface DBReferral {
 
 export async function getDB() {
   // On Netlify serverless, always use in-memory store (Prisma needs writable FS)
-  if (typeof process.env.NETLIFY !== 'undefined') {
+  // NETLIFY may not be set, but AWS_LAMBDA_FUNCTION_NAME is always set by Netlify Functions
+  const isServerless =
+    typeof process.env.NETLIFY !== 'undefined' ||
+    typeof process.env.AWS_LAMBDA_FUNCTION_NAME !== 'undefined';
+
+  if (isServerless) {
     return memoryDb;
   }
 
