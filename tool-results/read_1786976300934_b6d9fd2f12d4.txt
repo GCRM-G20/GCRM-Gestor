@@ -1,0 +1,1440 @@
+     1→'use client';
+     2→
+     3→import { useState, useRef, useEffect, useCallback } from 'react';
+     4→import { Button } from '@/components/ui/button';
+     5→import { Input } from '@/components/ui/input';
+     6→import { Label } from '@/components/ui/label';
+     7→import {
+     8→  Select,
+     9→  SelectContent,
+    10→  SelectItem,
+    11→  SelectTrigger,
+    12→  SelectValue,
+    13→} from '@/components/ui/select';
+    14→import {
+    15→  Dialog,
+    16→  DialogContent,
+    17→  DialogHeader,
+    18→  DialogTitle,
+    19→  DialogDescription,
+    20→} from '@/components/ui/dialog';
+    21→import {
+    22→  Copy, Check, ChevronLeft, ChevronRight, ExternalLink, Shield, Zap, Gift,
+    23→  ArrowRight, Wallet, Globe, Users, TrendingUp, LogOut, LogIn, User,
+    24→  DollarSign, Clock, CheckCircle, AlertCircle, LayoutDashboard,
+    25→  Eye, EyeOff, Loader2, BarChart3, UserPlus, Plane, Crown, Star, Award, Hash,
+    26→  ShieldCheck, Trash2, UsersRound, ArrowUpDown,
+    27→} from 'lucide-react';
+    28→import { useToast } from '@/hooks/use-toast';
+    29→import { Badge } from '@/components/ui/badge';
+    30→
+    31→/* ─── TYPES ─── */
+    32→
+    33→interface SessionUser {
+    34→  id: string;
+    35→  name: string;
+    36→  email: string;
+    37→  role: string;
+    38→  licencia?: string;
+    39→}
+    40→
+    41→const LICENCIAS = [
+    42→  { id: 'asociado', label: 'Asociado', price: '$150', value: 150 },
+    43→  { id: 'promotor', label: 'Promotor', price: '$300', value: 300 },
+    44→  { id: 'coordinador', label: 'Coordinador', price: '$500', value: 500 },
+    45→  { id: 'supervisor', label: 'Supervisor', price: '$1,000', value: 1000 },
+    46→];
+    47→
+    48→const LICENCIA_ICONS: Record<string, typeof Crown> = {
+    49→  asociado: Star,
+    50→  promotor: Award,
+    51→  coordinador: Crown,
+    52→  supervisor: Crown,
+    53→};
+    54→
+    55→interface Referral {
+    56→  id: string;
+    57→  referredName: string;
+    58→  referredEmail: string;
+    59→  commission: number;
+    60→  status: string;
+    61→  depositAmount: number | null;
+    62→  depositNetwork: string | null;
+    63→  createdAt: string;
+    64→}
+    65→
+    66→interface ReferralStats {
+    67→  totalCommissions: number;
+    68→  confirmedCommissions: number;
+    69→  paidCommissions: number;
+    70→  pendingCommissions: number;
+    71→  totalReferrals: number;
+    72→}
+    73→
+    74→/* ─── DATA ─── */
+    75→
+    76→const USDT_NETWORKS = [
+    77→  { id: 'bep20', label: 'BEP 20 (BSC)', address: '0xB4C692980666A2260F40123D6772Bec2ae464ea2', icon: '🔷' },
+    78→  { id: 'trx', label: 'TRX (TRC 20)', address: 'TL7NByppdqJc3EymPdu7yqDYwmy7rDJKQm', icon: '🗳' },
+    79→  { id: 'sol', label: 'SOL (Solana)', address: '74rwLcYBkYwADog7QwWa4PcomXUN9TX6da2CU7WYsnjA', icon: '🟣' },
+    80→];
+    81→
+    82→const EXCHANGES = [
+    83→  { name: 'BINGX', color: '#1E90FF', initial: 'B' },
+    84→  { name: 'MEXC', color: '#2EB6EA', initial: 'M' },
+    85→  { name: 'KUCOIN', color: '#23AF91', initial: 'K' },
+    86→  { name: 'Bibyt', color: '#8B5CF6', initial: 'Bi' },
+    87→  { name: 'GCRM Exchange', color: '#F0B90B', initial: 'G' },
+    88→  { name: 'Coinbase', color: '#0052FF', initial: 'C' },
+    89→  { name: 'Binance', color: '#F0B90B', initial: 'B' },
+    90→];
+    91→
+    92→const TRADING_GCRM_OPTIONS = [
+    93→  { id: '2000', label: '2000 GCRM' },
+    94→  { id: '4000', label: '4000 GCRM' },
+    95→  { id: '8000', label: '8000 GCRM' },
+    96→  { id: '16000', label: '16000 GCRM' },
+    97→];
+    98→
+    99→const FEATURES = [
+   100→  { icon: Shield, title: 'Seguridad Total', desc: 'Tecnología de seguridad de nivel bancario con encriptación de 256 bits y autenticación multi-factor.' },
+   101→  { icon: Zap, title: 'Transacciones Rápidas', desc: 'Procesamiento de depósitos en tiempo real con confirmación en la red blockchain.' },
+   102→  { icon: Gift, title: 'Comisión 5%', desc: 'Gana una comisión del 5% por cada registro referido. Programa de referidos ilimitado.' },
+   103→  { icon: TrendingUp, title: 'Listado Global', desc: 'GCRM está listado en los principales exchanges del mundo: Binance, Coinbase, MEXC y más.' },
+   104→];
+   105→
+   106→/* ─── COMPONENTS ─── */
+   107→
+   108→function CopyButton({ text }: { text: string }) {
+   109→  const [copied, setCopied] = useState(false);
+   110→  const { toast } = useToast();
+   111→
+   112→  const handleCopy = async () => {
+   113→    try {
+   114→      await navigator.clipboard.writeText(text);
+   115→      setCopied(true);
+   116→      toast({ title: 'Dirección copiada', description: 'La dirección ha sido copiada al portapapeles.' });
+   117→      setTimeout(() => setCopied(false), 2000);
+   118→    } catch {
+   119→      toast({ title: 'Error al copiar', description: 'No se pudo copiar la dirección.', variant: 'destructive' });
+   120→    }
+   121→  };
+   122→
+   123→  return (
+   124→    <button onClick={handleCopy} className="shrink-0 p-2 rounded-lg bg-[#2B3139] hover:bg-[#3B434D] transition-colors" aria-label="Copiar dirección">
+   125→      {copied ? <Check className="w-4 h-4 text-[#0ECB81]" /> : <Copy className="w-4 h-4 text-[#848E9C]" />}
+   126→    </button>
+   127→  );
+   128→}
+   129→
+   130→function ExchangeLogo({ name, color, initial }: { name: string; color: string; initial: string }) {
+   131→  return (
+   132→    <div className="flex flex-col items-center gap-2 min-w-[100px]">
+   133→      <div
+   134→        className="w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center text-xl md:text-2xl font-bold transition-all duration-300 hover:scale-110 hover:shadow-lg"
+   135→        style={{ background: `linear-gradient(135deg, ${color}22, ${color}44)`, border: `1px solid ${color}55`, color }}
+   136→      >
+   137→        {initial}
+   138→      </div>
+   139→      <span className="text-[#848E9C] text-xs md:text-sm font-medium">{name}</span>
+   140→    </div>
+   141→  );
+   142→}
+   143→
+   144→/* ─── PARTICLE BACKGROUND ─── */
+   145→
+   146→function ParticleBackground() {
+   147→  const canvasRef = useRef<HTMLCanvasElement>(null);
+   148→
+   149→  useEffect(() => {
+   150→    const canvas = canvasRef.current;
+   151→    if (!canvas) return;
+   152→    const ctx = canvas.getContext('2d');
+   153→    if (!ctx) return;
+   154→    let animId: number;
+   155→
+   156→    const resize = () => {
+   157→      canvas.width = window.innerWidth;
+   158→      canvas.height = window.innerHeight;
+   159→    };
+   160→    resize();
+   161→    window.addEventListener('resize', resize);
+   162→
+   163→    const PARTICLE_COUNT = 80;
+   164→    const CONNECTION_DIST = 150;
+   165→    const particles: { x: number; y: number; vx: number; vy: number; r: number; o: number }[] = [];
+   166→
+   167→    for (let i = 0; i < PARTICLE_COUNT; i++) {
+   168→      particles.push({
+   169→        x: Math.random() * canvas.width,
+   170→        y: Math.random() * canvas.height,
+   171→        vx: (Math.random() - 0.5) * 0.4,
+   172→        vy: (Math.random() - 0.5) * 0.4,
+   173→        r: Math.random() * 1.5 + 0.5,
+   174→        o: Math.random() * 0.5 + 0.2,
+   175→      });
+   176→    }
+   177→
+   178→    const draw = () => {
+   179→      ctx.clearRect(0, 0, canvas.width, canvas.height);
+   180→
+   181→      // Update & draw particles
+   182→      for (const p of particles) {
+   183→        p.x += p.vx;
+   184→        p.y += p.vy;
+   185→        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+   186→        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+   187→
+   188→        ctx.beginPath();
+   189→        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+   190→        ctx.fillStyle = `rgba(240, 185, 11, ${p.o})`;
+   191→        ctx.fill();
+   192→      }
+   193→
+   194→      // Draw connections
+   195→      for (let i = 0; i < particles.length; i++) {
+   196→        for (let j = i + 1; j < particles.length; j++) {
+   197→          const dx = particles[i].x - particles[j].x;
+   198→          const dy = particles[i].y - particles[j].y;
+   199→          const dist = Math.sqrt(dx * dx + dy * dy);
+   200→          if (dist < CONNECTION_DIST) {
+   201→            const alpha = (1 - dist / CONNECTION_DIST) * 0.15;
+   202→            ctx.beginPath();
+   203→            ctx.moveTo(particles[i].x, particles[i].y);
+   204→            ctx.lineTo(particles[j].x, particles[j].y);
+   205→            ctx.strokeStyle = `rgba(240, 185, 11, ${alpha})`;
+   206→            ctx.lineWidth = 0.5;
+   207→            ctx.stroke();
+   208→          }
+   209→        }
+   210→      }
+   211→
+   212→      animId = requestAnimationFrame(draw);
+   213→    };
+   214→    draw();
+   215→
+   216→    return () => {
+   217→      cancelAnimationFrame(animId);
+   218→      window.removeEventListener('resize', resize);
+   219→    };
+   220→  }, []);
+   221→
+   222→  return (
+   223→    <canvas
+   224→      ref={canvasRef}
+   225→      className="absolute inset-0 w-full h-full pointer-events-none"
+   226→      style={{ zIndex: 1 }}
+   227→    />
+   228→  );
+   229→}
+   230→
+   231→/* ─── EXCHANGE CAROUSEL ─── */
+   232→
+   233→function ExchangeCarousel() {
+   234→  const scrollRef = useRef<HTMLDivElement>(null);
+   235→  const [canScrollLeft, setCanScrollLeft] = useState(false);
+   236→  const [canScrollRight, setCanScrollRight] = useState(true);
+   237→
+   238→  const checkScroll = useCallback(() => {
+   239→    const el = scrollRef.current;
+   240→    if (!el) return;
+   241→    setCanScrollLeft(el.scrollLeft > 0);
+   242→    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 10);
+   243→  }, []);
+   244→
+   245→  useEffect(() => {
+   246→    checkScroll();
+   247→    const el = scrollRef.current;
+   248→    if (el) el.addEventListener('scroll', checkScroll);
+   249→    return () => { if (el) el.removeEventListener('scroll', checkScroll); };
+   250→  }, [checkScroll]);
+   251→
+   252→  const scroll = (dir: 'left' | 'right') => {
+   253→    const el = scrollRef.current;
+   254→    if (!el) return;
+   255→    el.scrollBy({ left: dir === 'left' ? -200 : 200, behavior: 'smooth' });
+   256→  };
+   257→
+   258→  const items = [...EXCHANGES, ...EXCHANGES];
+   259→
+   260→  return (
+   261→    <div className="relative w-full">
+   262→      <div className="text-center mb-6">
+   263→        <p className="text-[#848E9C] text-sm uppercase tracking-widest mb-1">Listado en Exchanges</p>
+   264→        <h2 className="text-xl md:text-2xl font-bold text-[#EAECEF]">
+   265→          <span className="text-gold-gradient">GCRM EN PRE LANZAMIENTO</span> EN LOS EXCHANGES
+   266→        </h2>
+   267→        <p className="text-[#848E9C] text-sm mt-2 max-w-xl mx-auto">
+   268→          GCRM avanza hacia los principales exchanges del mundo, acercando la nueva era de las finanzas descentralizadas.
+   269→        </p>
+   270→        <p className="text-[#F0B90B] text-sm font-semibold mt-2">Próximamente: GCRM Exchange + GCRM Wallet.</p>
+   271→      </div>
+   272→      <div className="relative group">
+   273→        {canScrollLeft && (
+   274→          <button onClick={() => scroll('left')} className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-[#1E2329] border border-[#2B3139] flex items-center justify-center hover:bg-[#2B3139] transition-all opacity-0 group-hover:opacity-100" aria-label="Anterior">
+   275→            <ChevronLeft className="w-5 h-5 text-[#EAECEF]" />
+   276→          </button>
+   277→        )}
+   278→        {canScrollRight && (
+   279→          <button onClick={() => scroll('right')} className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-[#1E2329] border border-[#2B3139] flex items-center justify-center hover:bg-[#2B3139] transition-all opacity-0 group-hover:opacity-100" aria-label="Siguiente">
+   280→            <ChevronRight className="w-5 h-5 text-[#EAECEF]" />
+   281→          </button>
+   282→        )}
+   283→        <div ref={scrollRef} className="flex gap-6 overflow-x-auto py-4 px-2 snap-x snap-mandatory" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+   284→          {items.map((ex, i) => (
+   285→            <div key={`${ex.name}-${i}`} className="snap-center shrink-0">
+   286→              <ExchangeLogo {...ex} />
+   287→            </div>
+   288→          ))}
+   289→        </div>
+   290→      </div>
+   291→      <div className="flex items-center justify-center gap-2 mt-4">
+   292→        <div className="h-px bg-[#2B3139] w-16" />
+   293→        <span className="text-[#848E9C] text-xs uppercase tracking-wider">Verificado en CoinMarketCap</span>
+   294→        <div className="h-px bg-[#2B3139] w-16" />
+   295→      </div>
+   296→    </div>
+   297→  );
+   298→}
+   299→
+   300→/* ─── HOTCOIN SECTION ─── */
+   301→
+   302→function HotcoinSection() {
+   303→  return (
+   304→    <div className="glass-card rounded-2xl p-6 md:p-8">
+   305→      <div className="flex flex-col md:flex-row items-center gap-6">
+   306→        <div className="shrink-0">
+   307→          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#1E90FF] to-[#0066CC] flex items-center justify-center">
+   308→            <span className="text-white text-2xl font-bold">H</span>
+   309→          </div>
+   310→        </div>
+   311→        <div className="flex-1 text-center md:text-left">
+   312→          <h3 className="text-xl md:text-2xl font-bold text-[#EAECEF] mb-2">
+   313→            GCRM en <span className="text-[#1E90FF]">Hotcoin</span>
+   314→          </h3>
+   315→          <p className="text-[#848E9C] text-sm md:text-base leading-relaxed">
+   316→            GCRM token ya está disponible para trading en Hotcoin Exchange. Realiza tus operaciones de compra y venta
+   317→            de manera segura en una de las plataformas más confiables del mercado cripto.
+   318→          </p>
+   319→        </div>
+   320→        <a href="https://www.hotcoin.com" target="_blank" rel="noopener noreferrer"
+   321→          className="shrink-0 flex items-center gap-2 px-6 py-3 rounded-xl bg-[#1E90FF] hover:bg-[#1A7AE6] text-white font-semibold text-sm transition-all hover:shadow-lg hover:shadow-[#1E90FF]/20">
+   322→          Operar Ahora
+   323→          <ExternalLink className="w-4 h-4" />
+   324→        </a>
+   325→      </div>
+   326→      <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+   327→        {[
+   328→          { label: 'Par de Trading', value: 'GCRM/USDT' },
+   329→          { label: 'Red', value: 'USDT (TRC-20)' },
+   330→          { label: 'Estado', value: 'Activo' },
+   331→          { label: 'Volumen 24h', value: '+125K USDT' },
+   332→        ].map((item) => (
+   333→          <div key={item.label} className="bg-[#0B0E11] rounded-xl p-4 text-center">
+   334→            <p className="text-[#848E9C] text-xs mb-1">{item.label}</p>
+   335→            <p className="text-[#EAECEF] font-semibold text-sm">{item.value}</p>
+   336→          </div>
+   337→        ))}
+   338→      </div>
+   339→    </div>
+   340→  );
+   341→}
+   342→
+   343→/* ─── LOGIN DIALOG ─── */
+   344→
+   345→function LoginDialog({ open, onOpenChange, onSwitchToRegister }: {
+   346→  open: boolean;
+   347→  onOpenChange: (open: boolean) => void;
+   348→  onSwitchToRegister: () => void;
+   349→}) {
+   350→  const [email, setEmail] = useState('');
+   351→  const [password, setPassword] = useState('');
+   352→  const [showPassword, setShowPassword] = useState(false);
+   353→  const [loading, setLoading] = useState(false);
+   354→  const { toast } = useToast();
+   355→
+   356→  const handleLogin = async (e: React.FormEvent) => {
+   357→    e.preventDefault();
+   358→    if (!email || !password) {
+   359→      toast({ title: 'Campos requeridos', description: 'Ingresa correo y contraseña.', variant: 'destructive' });
+   360→      return;
+   361→    }
+   362→    setLoading(true);
+   363→    try {
+   364→      const res = await fetch('/api/auth/login', {
+   365→        method: 'POST',
+   366→        headers: { 'Content-Type': 'application/json' },
+   367→        body: JSON.stringify({ email, password }),
+   368→      });
+   369→      const data = await res.json();
+   370→      if (!res.ok) {
+   371→        toast({ title: 'Error', description: data.error, variant: 'destructive' });
+   372→      } else {
+   373→        toast({ title: 'Bienvenido', description: `Hola, ${data.user.name}.` });
+   374→        onOpenChange(false);
+   375→        setEmail(''); setPassword('');
+   376→        window.location.reload();
+   377→      }
+   378→    } catch {
+   379→      toast({ title: 'Error', description: 'No se pudo conectar al servidor.', variant: 'destructive' });
+   380→    }
+   381→    setLoading(false);
+   382→  };
+   383→
+   384→  return (
+   385→    <Dialog open={open} onOpenChange={onOpenChange}>
+   386→      <DialogContent className="bg-[#1E2329] border-[#2B3139] text-[#EAECEF] sm:max-w-md">
+   387→        <DialogHeader>
+   388→          <DialogTitle className="text-xl font-bold flex items-center gap-2">
+   389→            <LogIn className="w-5 h-5 text-[#F0B90B]" />
+   390→            Iniciar Sesión
+   391→          </DialogTitle>
+   392→          <DialogDescription className="text-[#848E9C]">
+   393→            Ingresa tus credenciales para acceder a tu panel de comisiones.
+   394→          </DialogDescription>
+   395→        </DialogHeader>
+   396→        <form onSubmit={handleLogin} className="space-y-4 mt-4">
+   397→          <div className="space-y-2">
+   398→            <Label htmlFor="login-email" className="text-sm text-[#EAECEF]">Correo Electrónico</Label>
+   399→            <Input id="login-email" type="email" placeholder="tu@correo.com" value={email} onChange={(e) => setEmail(e.target.value)}
+   400→              className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-11 text-sm" />
+   401→          </div>
+   402→          <div className="space-y-2">
+   403→            <Label htmlFor="login-pass" className="text-sm text-[#EAECEF]">Contraseña</Label>
+   404→            <div className="relative">
+   405→              <Input id="login-pass" type={showPassword ? 'text' : 'password'} placeholder="Tu contraseña" value={password} onChange={(e) => setPassword(e.target.value)}
+   406→                className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-11 text-sm pr-10" />
+   407→              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#848E9C] hover:text-[#EAECEF] transition-colors">
+   408→                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+   409→              </button>
+   410→            </div>
+   411→          </div>
+   412→          <Button type="submit" disabled={loading} className="w-full bg-[#F0B90B] hover:bg-[#F8D12F] text-[#0B0E11] font-bold rounded-xl h-11 text-sm transition-all disabled:opacity-50">
+   413→            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Iniciar Sesión'}
+   414→          </Button>
+   415→          <p className="text-center text-sm text-[#848E9C]">
+   416→            ¿No tienes cuenta?{' '}
+   417→            <button type="button" onClick={() => { onOpenChange(false); onSwitchToRegister(); }} className="text-[#F0B90B] hover:underline font-medium">
+   418→              Regístrate aquí
+   419→            </button>
+   420→          </p>
+   421→        </form>
+   422→      </DialogContent>
+   423→    </Dialog>
+   424→  );
+   425→}
+   426→
+   427→/* ─── REGISTER DIALOG ─── */
+   428→
+   429→function RegisterDialog({ open, onOpenChange, onSwitchToLogin }: {
+   430→  open: boolean;
+   431→  onOpenChange: (open: boolean) => void;
+   432→  onSwitchToLogin: () => void;
+   433→}) {
+   434→  const [name, setName] = useState('');
+   435→  const [email, setEmail] = useState('');
+   436→  const [password, setPassword] = useState('');
+   437→  const [showPassword, setShowPassword] = useState(false);
+   438→  const [regLicencia, setRegLicencia] = useState('');
+   439→  const [loading, setLoading] = useState(false);
+   440→  const { toast } = useToast();
+   441→
+   442→  const handleRegister = async (e: React.FormEvent) => {
+   443→    e.preventDefault();
+   444→    if (!name || !email || !password) {
+   445→      toast({ title: 'Campos requeridos', description: 'Completa todos los campos.', variant: 'destructive' });
+   446→      return;
+   447→    }
+   448→    if (password.length < 6) {
+   449→      toast({ title: 'Contraseña corta', description: 'Mínimo 6 caracteres.', variant: 'destructive' });
+   450→      return;
+   451→    }
+   452→    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+   453→      toast({ title: 'Correo inválido', description: 'Ingresa un correo válido.', variant: 'destructive' });
+   454→      return;
+   455→    }
+   456→    setLoading(true);
+   457→    try {
+   458→      const res = await fetch('/api/auth/register', {
+   459→        method: 'POST',
+   460→        headers: { 'Content-Type': 'application/json' },
+   461→        body: JSON.stringify({ name, email, password, licencia: regLicencia }),
+   462→      });
+   463→      const data = await res.json();
+   464→      if (!res.ok) {
+   465→        toast({ title: 'Error', description: data.error, variant: 'destructive' });
+   466→      } else {
+   467→        toast({ title: 'Registro exitoso', description: `Bienvenido/a ${data.user.name}. Licencia: ${regLicencia ? LICENCIAS.find(l => l.id === regLicencia)?.label : 'N/A'}.` });
+   468→        onOpenChange(false);
+   469→        setName(''); setEmail(''); setPassword('');
+   470→        window.location.reload();
+   471→      }
+   472→    } catch {
+   473→      toast({ title: 'Error', description: 'No se pudo conectar al servidor.', variant: 'destructive' });
+   474→    }
+   475→    setLoading(false);
+   476→  };
+   477→
+   478→  return (
+   479→    <Dialog open={open} onOpenChange={onOpenChange}>
+   480→      <DialogContent className="bg-[#1E2329] border-[#2B3139] text-[#EAECEF] sm:max-w-md">
+   481→        <DialogHeader>
+   482→          <DialogTitle className="text-xl font-bold flex items-center gap-2">
+   483→            <UserPlus className="w-5 h-5 text-[#F0B90B]" />
+   484→            Crear Cuenta
+   485→          </DialogTitle>
+   486→          <DialogDescription className="text-[#848E9C]">
+   487→            Regístrate como Miembro Ejecutivo GCRM y accede a tu panel de comisiones.
+   488→          </DialogDescription>
+   489→        </DialogHeader>
+   490→        <form onSubmit={handleRegister} className="space-y-4 mt-4">
+   491→          <div className="space-y-2">
+   492→            <Label htmlFor="reg-name" className="text-sm text-[#EAECEF]">Nombre Completo</Label>
+   493→            <Input id="reg-name" type="text" placeholder="Tu nombre" value={name} onChange={(e) => setName(e.target.value)}
+   494→              className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-11 text-sm" />
+   495→          </div>
+   496→          <div className="space-y-2">
+   497→            <Label htmlFor="reg-email" className="text-sm text-[#EAECEF]">Correo Electrónico</Label>
+   498→            <Input id="reg-email" type="email" placeholder="tu@correo.com" value={email} onChange={(e) => setEmail(e.target.value)}
+   499→              className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-11 text-sm" />
+   500→          </div>
+   501→          <div className="space-y-2">
+   502→            <Label htmlFor="reg-pass" className="text-sm text-[#EAECEF]">Contraseña (mínimo 6 caracteres)</Label>
+   503→            <div className="relative">
+   504→              <Input id="reg-pass" type={showPassword ? 'text' : 'password'} placeholder="Tu contraseña" value={password} onChange={(e) => setPassword(e.target.value)}
+   505→                className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-11 text-sm pr-10" />
+   506→              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#848E9C] hover:text-[#EAECEF] transition-colors">
+   507→                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+   508→              </button>
+   509→            </div>
+   510→          </div>
+   511→          {/* Licencia dropdown */}
+   512→          <div className="space-y-2">
+   513→            <Label className="text-sm text-[#EAECEF] flex items-center gap-2">
+   514→              <Crown className="w-4 h-4 text-[#F0B90B]" />
+   515→              Licencia Ejecutiva
+   516→            </Label>
+   517→            <Select value={regLicencia} onValueChange={setRegLicencia}>
+   518→              <SelectTrigger className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] rounded-xl h-11 text-sm">
+   519→                <SelectValue placeholder="Selecciona tu licencia" />
+   520→              </SelectTrigger>
+   521→              <SelectContent className="bg-[#1E2329] border-[#2B3139]">
+   522→                {LICENCIAS.map((l) => (
+   523→                  <SelectItem key={l.id} value={l.id} className="text-[#EAECEF] focus:bg-[#2B3139] focus:text-[#F0B90B]">
+   524→                    <span className="flex items-center justify-between w-full gap-4">
+   525→                      <span>{l.label}</span>
+   526→                      <span className="text-[#F0B90B] font-semibold">{l.price}</span>
+   527→                    </span>
+   528→                  </SelectItem>
+   529→                ))}
+   530→              </SelectContent>
+   531→            </Select>
+   532→            {regLicencia && (
+   533→              <p className="text-xs text-[#848E9C]">Licencia seleccionada: <span className="text-[#F0B90B] font-medium">{LICENCIAS.find(l => l.id === regLicencia)?.label} - {LICENCIAS.find(l => l.id === regLicencia)?.price}</span></p>
+   534→            )}
+   535→          </div>
+   536→          <Button type="submit" disabled={loading} className="w-full bg-[#F0B90B] hover:bg-[#F8D12F] text-[#0B0E11] font-bold rounded-xl h-11 text-sm transition-all disabled:opacity-50">
+   537→            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Crear Cuenta Ejecutiva'}
+   538→          </Button>
+   539→          <p className="text-center text-sm text-[#848E9C]">
+   540→            ¿Ya tienes cuenta?{' '}
+   541→            <button type="button" onClick={() => { onOpenChange(false); onSwitchToLogin(); }} className="text-[#F0B90B] hover:underline font-medium">
+   542→              Inicia sesión
+   543→            </button>
+   544→          </p>
+   545→        </form>
+   546→      </DialogContent>
+   547→    </Dialog>
+   548→  );
+   549→}
+   550→
+   551→/* ─── ADMIN PANEL ─── */
+   552→
+   553→interface AdminUser {
+   554→  id: string;
+   555→  name: string;
+   556→  username: string;
+   557→  email: string;
+   558→  role: string;
+   559→  licencia: string;
+   560→  paymentHash: string;
+   561→  tradingPackage: string;
+   562→  createdAt: string;
+   563→  _count: { referrals: number };
+   564→}
+   565→
+   566→interface AdminStats {
+   567→  totalUsers: number;
+   568→  totalReferrals: number;
+   569→  admins: number;
+   570→  totalCommissions: number;
+   571→  paidCommissions: number;
+   572→  pendingReferrals: number;
+   573→  confirmedReferrals: number;
+   574→  paidReferrals: number;
+   575→  recentUsers: number;
+   576→}
+   577→
+   578→function AdminPanel({ onClose }: { onClose: () => void }) {
+   579→  const [users, setUsers] = useState<AdminUser[]>([]);
+   580→  const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
+   581→  const [loading, setLoading] = useState(true);
+   582→  const [search, setSearch] = useState('');
+   583→  const [actionLoading, setActionLoading] = useState<string | null>(null);
+   584→  const { toast } = useToast();
+   585→
+   586→  const loadData = async () => {
+   587→    try {
+   588→      const [usersRes, statsRes] = await Promise.all([
+   589→        fetch('/api/admin/users'),
+   590→        fetch('/api/admin/stats'),
+   591→      ]);
+   592→      if (usersRes.ok) {
+   593→        const data = await usersRes.json();
+   594→        setUsers(data.users);
+   595→      }
+   596→      if (statsRes.ok) {
+   597→        const data = await statsRes.json();
+   598→        setAdminStats(data.stats);
+   599→      }
+   600→    } catch {
+   601→      toast({ title: 'Error', description: 'No se pudo cargar la información.', variant: 'destructive' });
+   602→    }
+   603→    setLoading(false);
+   604→  };
+   605→
+   606→  useEffect(() => { loadData(); }, []);
+   607→
+   608→  const handleDelete = async (userId: string, name: string) => {
+   609→    if (!confirm(`¿Estás seguro de eliminar al usuario ${name}? Esta acción no se puede deshacer.`)) return;
+   610→    setActionLoading(userId);
+   611→    try {
+   612→      const res = await fetch(`/api/admin/users?id=${userId}`, { method: 'DELETE' });
+   613→      const data = await res.json();
+   614→      if (res.ok) {
+   615→        toast({ title: 'Usuario eliminado', description: data.message });
+   616→        setUsers((prev) => prev.filter((u) => u.id !== userId));
+   617→      } else {
+   618→        toast({ title: 'Error', description: data.error, variant: 'destructive' });
+   619→      }
+   620→    } catch {
+   621→      toast({ title: 'Error', description: 'No se pudo eliminar.', variant: 'destructive' });
+   622→    }
+   623→    setActionLoading(null);
+   624→  };
+   625→
+   626→  const handleToggleRole = async (userId: string, currentRole: string) => {
+   627→    const newRole = currentRole === 'admin' ? 'user' : 'admin';
+   628→    setActionLoading(userId);
+   629→    try {
+   630→      const res = await fetch('/api/admin/users', {
+   631→        method: 'PATCH',
+   632→        headers: { 'Content-Type': 'application/json' },
+   633→        body: JSON.stringify({ userId, role: newRole }),
+   634→      });
+   635→      const data = await res.json();
+   636→      if (res.ok) {
+   637→        toast({ title: 'Rol actualizado', description: data.message });
+   638→        setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, role: newRole } : u));
+   639→      } else {
+   640→        toast({ title: 'Error', description: data.error, variant: 'destructive' });
+   641→      }
+   642→    } catch {
+   643→      toast({ title: 'Error', description: 'No se pudo actualizar el rol.', variant: 'destructive' });
+   644→    }
+   645→    setActionLoading(null);
+   646→  };
+   647→
+   648→  const filtered = users.filter(
+   649→    (u) =>
+   650→      u.name.toLowerCase().includes(search.toLowerCase()) ||
+   651→      u.email.toLowerCase().includes(search.toLowerCase()) ||
+   652→      u.username.toLowerCase().includes(search.toLowerCase())
+   653→  );
+   654→
+   655→  const fmtDate = (d: string) => new Date(d).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+   656→
+   657→  return (
+   658→    <div className="min-h-screen bg-[#0B0E11] flex flex-col">
+   659→      <header className="sticky top-0 z-50 bg-[#0B0E11]/95 backdrop-blur-md border-b border-[#2B3139]">
+   660→        <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
+   661→          <div className="flex items-center gap-3">
+   662→            <img src="/assets/gcrm-logo.png" alt="GCRM" className="w-8 h-8 rounded-full" />
+   663→            <span className="text-xl font-bold text-gold-gradient">GCRM Admin</span>
+   664→            <Badge className="bg-red-500/10 text-red-400 border-red-500/20 text-xs"><ShieldCheck className="w-3 h-3 mr-1" />Administrador</Badge>
+   665→          </div>
+   666→          <Button onClick={onClose} variant="outline" className="border-[#2B3139] text-[#848E9C] hover:bg-[#1E2329] rounded-lg text-sm gap-2">
+   667→            <ArrowRight className="w-4 h-4 rotate-180" />
+   668→            Volver al Dashboard
+   669→          </Button>
+   670→        </div>
+   671→      </header>
+   672→
+   673→      <main className="flex-1 py-8 md:py-12">
+   674→        <div className="max-w-7xl mx-auto px-4 md:px-6">
+   675→          {/* Admin Stats */}
+   676→          {loading ? (
+   677→            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+   678→              {[...Array(8)].map((_, i) => (<div key={i} className="glass-card rounded-2xl p-5 animate-pulse"><div className="h-4 bg-[#2B3139] rounded w-16 mb-2" /><div className="h-7 bg-[#2B3139] rounded w-24" /></div>))}
+   679→            </div>
+   680→          ) : adminStats ? (
+   681→            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+   682→              <StatCard icon={Users} title="Total Usuarios" value={String(adminStats.totalUsers)} subtitle={`${adminStats.recentUsers} nuevos (7d)`} color="#F0B90B" />
+   683→              <StatCard icon={UsersRound} title="Total Referidos" value={String(adminStats.totalReferrals)} subtitle={`${adminStats.pendingReferrals} pendientes`} color="#0ECB81" />
+   684→              <StatCard icon={DollarSign} title="Comisiones" value={`$${adminStats.totalCommissions.toFixed(2)}`} subtitle={`$${adminStats.paidCommissions.toFixed(2)} pagadas`} color="#2EB6EA" />
+   685→              <StatCard icon={ShieldCheck} title="Administradores" value={String(adminStats.admins)} subtitle="Usuarios con acceso admin" color="#FCD535" />
+   686→            </div>
+   687→          ) : null}
+   688→
+   689→          {/* Controls */}
+   690→          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+   691→            <h2 className="text-xl font-bold text-[#EAECEF] flex items-center gap-2">
+   692→              <LayoutDashboard className="w-5 h-5 text-[#F0B90B]" />
+   693→              Gestión de Usuarios
+   694→            </h2>
+   695→            <Input
+   696→              placeholder="Buscar por nombre, email o usuario..."
+   697→              value={search}
+   698→              onChange={(e) => setSearch(e.target.value)}
+   699→              className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] rounded-xl h-10 text-sm w-full sm:w-80"
+   700→            />
+   701→          </div>
+   702→
+   703→          {/* Users Table */}
+   704→          <div className="glass-card rounded-2xl overflow-hidden">
+   705→            {loading ? (
+   706→              <div className="p-8 text-center text-[#848E9C]"><Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />Cargando usuarios...</div>
+   707→            ) : (
+   708→              <div className="overflow-x-auto">
+   709→                <table className="w-full text-sm">
+   710→                  <thead>
+   711→                    <tr className="border-b border-[#2B3139]">
+   712→                      <th className="text-left px-4 py-3 text-[#848E9C] font-medium">Usuario</th>
+   713→                      <th className="text-left px-4 py-3 text-[#848E9C] font-medium hidden md:table-cell">Email</th>
+   714→                      <th className="text-left px-4 py-3 text-[#848E9C] font-medium hidden lg:table-cell">Licencia</th>
+   715→                      <th className="text-left px-4 py-3 text-[#848E9C] font-medium hidden lg:table-cell">Trading</th>
+   716→                      <th className="text-center px-4 py-3 text-[#848E9C] font-medium">Referidos</th>
+   717→                      <th className="text-left px-4 py-3 text-[#848E9C] font-medium hidden sm:table-cell">Fecha</th>
+   718→                      <th className="text-center px-4 py-3 text-[#848E9C] font-medium">Rol</th>
+   719→                      <th className="text-center px-4 py-3 text-[#848E9C] font-medium">Acciones</th>
+   720→                    </tr>
+   721→                  </thead>
+   722→                  <tbody>
+   723→                    {filtered.length === 0 ? (
+   724→                      <tr><td colSpan={8} className="px-4 py-8 text-center text-[#5E6673]">No se encontraron usuarios.</td></tr>
+   725→                    ) : filtered.map((u) => (
+   726→                      <tr key={u.id} className="border-b border-[#2B3139]/50 hover:bg-[#2B3139]/30 transition-colors">
+   727→                        <td className="px-4 py-3">
+   728→                          <div>
+   729→                            <p className="text-[#EAECEF] font-medium text-sm">{u.name}</p>
+   730→                            {u.username && <p className="text-[#5E6673] text-xs">@{u.username}</p>}
+   731→                          </div>
+   732→                        </td>
+   733→                        <td className="px-4 py-3 hidden md:table-cell">
+   734→                          <p className="text-[#848E9C] text-xs">{u.email}</p>
+   735→                        </td>
+   736→                        <td className="px-4 py-3 hidden lg:table-cell">
+   737→                          {u.licencia ? (
+   738→                            <Badge className="bg-[#F0B90B]/10 text-[#F0B90B] border-[#F0B90B]/20 text-xs">
+   739→                              {LICENCIAS.find(l => l.id === u.licencia)?.label || u.licencia}
+   740→                            </Badge>
+   741→                          ) : <span className="text-[#5E6673] text-xs">-</span>}
+   742→                        </td>
+   743→                        <td className="px-4 py-3 hidden lg:table-cell">
+   744→                          {u.tradingPackage ? (
+   745→                            <Badge className="bg-[#0ECB81]/10 text-[#0ECB81] border-[#0ECB81]/20 text-xs">{u.tradingPackage} GCRM</Badge>
+   746→                          ) : <span className="text-[#5E6673] text-xs">-</span>}
+   747→                        </td>
+   748→                        <td className="px-4 py-3 text-center">
+   749→                          <span className="text-[#EAECEF] font-semibold">{u._count.referrals}</span>
+   750→                        </td>
+   751→                        <td className="px-4 py-3 hidden sm:table-cell">
+   752→                          <p className="text-[#848E9C] text-xs">{fmtDate(u.createdAt)}</p>
+   753→                        </td>
+   754→                        <td className="px-4 py-3 text-center">
+   755→                          <Badge className={u.role === 'admin' ? 'bg-red-500/10 text-red-400 border-red-500/20 text-xs' : 'bg-[#2B3139] text-[#848E9C] text-xs'}>
+   756→                            {u.role === 'admin' ? 'Admin' : 'User'}
+   757→                          </Badge>
+   758→                        </td>
+   759→                        <td className="px-4 py-3">
+   760→                          <div className="flex items-center justify-center gap-1">
+   761→                            <button
+   762→                              onClick={() => handleToggleRole(u.id, u.role)}
+   763→                              disabled={actionLoading === u.id}
+   764→                              className="p-1.5 rounded-lg hover:bg-[#2B3139] transition-colors disabled:opacity-50"
+   765→                              title={u.role === 'admin' ? 'Quitar admin' : 'Hacer admin'}
+   766→                            >
+   767→                              {actionLoading === u.id ? <Loader2 className="w-4 h-4 animate-spin text-[#848E9C]" /> : <ShieldCheck className={`w-4 h-4 ${u.role === 'admin' ? 'text-red-400' : 'text-[#0ECB81]'}`} />}
+   768→                            </button>
+   769→                            <button
+   770→                              onClick={() => handleDelete(u.id, u.name)}
+   771→                              disabled={actionLoading === u.id}
+   772→                              className="p-1.5 rounded-lg hover:bg-red-500/10 transition-colors disabled:opacity-50"
+   773→                              title="Eliminar usuario"
+   774→                            >
+   775→                              <Trash2 className="w-4 h-4 text-[#848E9C] hover:text-red-400" />
+   776→                            </button>
+   777→                          </div>
+   778→                        </td>
+   779→                      </tr>
+   780→                    ))}
+   781→                  </tbody>
+   782→                </table>
+   783→              </div>
+   784→            )}
+   785→            <div className="p-4 border-t border-[#2B3139] text-center">
+   786→              <span className="text-[#5E6673] text-xs">{filtered.length} de {users.length} usuarios</span>
+   787→            </div>
+   788→          </div>
+   789→        </div>
+   790→      </main>
+   791→    </div>
+   792→  );
+   793→}
+   794→
+   795→/* ─── COMMISSIONS DASHBOARD ─── */
+   796→
+   797→function Dashboard({ user, onLogout }: { user: SessionUser; onLogout: () => void }) {
+   798→  const [stats, setStats] = useState<ReferralStats | null>(null);
+   799→  const [referrals, setReferrals] = useState<Referral[]>([]);
+   800→  const [loading, setLoading] = useState(true);
+   801→  const [loggingOut, setLoggingOut] = useState(false);
+   802→  const [showAdmin, setShowAdmin] = useState(false);
+   803→  const { toast } = useToast();
+   804→
+   805→  useEffect(() => {
+   806→    let cancelled = false;
+   807→    const load = async () => {
+   808→      try {
+   809→        const res = await fetch('/api/referrals');
+   810→        if (res.ok && !cancelled) {
+   811→          const data = await res.json();
+   812→          setStats(data.stats);
+   813→          setReferrals(data.referrals);
+   814→        }
+   815→      } catch {
+   816→        if (!cancelled) toast({ title: 'Error', description: 'No se pudieron cargar las comisiones.', variant: 'destructive' });
+   817→      }
+   818→      if (!cancelled) setLoading(false);
+   819→    };
+   820→    load();
+   821→    return () => { cancelled = true; };
+   822→  }, [toast]);
+   823→
+   824→  const handleLogout = async () => {
+   825→    setLoggingOut(true);
+   826→    try {
+   827→      await fetch('/api/auth/logout', { method: 'POST' });
+   828→      toast({ title: 'Sesión cerrada', description: 'Has cerrado sesión correctamente.' });
+   829→      onLogout();
+   830→      window.location.reload();
+   831→    } catch {
+   832→      toast({ title: 'Error', description: 'No se pudo cerrar sesión.', variant: 'destructive' });
+   833→    }
+   834→    setLoggingOut(false);
+   835→  };
+   836→
+   837→  const statusConfig: Record<string, { color: string; bg: string; icon: typeof CheckCircle; label: string }> = {
+   838→    confirmed: { color: 'text-[#0ECB81]', bg: 'bg-[#0ECB81]/10', icon: CheckCircle, label: 'Confirmado' },
+   839→    paid: { color: 'text-[#F0B90B]', bg: 'bg-[#F0B90B]/10', icon: DollarSign, label: 'Pagado' },
+   840→    pending: { color: 'text-[#FCD535]', bg: 'bg-[#FCD535]/10', icon: Clock, label: 'Pendiente' },
+   841→  };
+   842→
+   843→  const formatDate = (dateStr: string) => {
+   844→    return new Date(dateStr).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+   845→  };
+   846→
+   847→  if (showAdmin) {
+   848→    return <AdminPanel onClose={() => setShowAdmin(false)} />;
+   849→  }
+   850→
+   851→  return (
+   852→    <div className="min-h-screen bg-[#0B0E11] flex flex-col">
+   853→      {/* Dashboard Navbar */}
+   854→      <header className="sticky top-0 z-50 bg-[#0B0E11]/95 backdrop-blur-md border-b border-[#2B3139]">
+   855→        <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
+   856→          <div className="flex items-center gap-3">
+   857→            <img src="/assets/gcrm-logo.png" alt="GCRM Logo" className="w-8 h-8 rounded-full" />
+   858→            <span className="text-xl font-bold text-gold-gradient">GCRM Exchange</span>
+   859→          </div>
+   860→          <div className="flex items-center gap-3">
+   861→            {user.role === 'admin' && (
+   862→              <Button onClick={() => setShowAdmin(true)} variant="outline"
+   863→                className="border-[#F0B90B]/30 text-[#F0B90B] hover:bg-[#F0B90B]/10 rounded-lg text-sm gap-2">
+   864→                <ShieldCheck className="w-4 h-4" />
+   865→                <span className="hidden sm:inline">Admin</span>
+   866→              </Button>
+   867→            )}
+   868→            <div className="hidden sm:flex items-center gap-2 text-sm text-[#848E9C]">
+   869→              <User className="w-4 h-4" />
+   870→              <span>{user.name}</span>
+   871→            </div>
+   872→            <Button onClick={handleLogout} disabled={loggingOut} variant="outline"
+   873→              className="border-[#2B3139] text-[#848E9C] hover:text-red-400 hover:border-red-400/30 rounded-lg text-sm gap-2">
+   874→              {loggingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+   875→              <span className="hidden sm:inline">Salir</span>
+   876→            </Button>
+   877→          </div>
+   878→        </div>
+   879→      </header>
+   880→
+   881→      <main className="flex-1 py-8 md:py-12">
+   882→        <div className="max-w-7xl mx-auto px-4 md:px-6">
+   883→          {/* Welcome Header */}
+   884→          <div className="mb-8">
+   885→            <h1 className="text-2xl md:text-3xl font-bold text-[#EAECEF] mb-2">
+   886→              Panel de <span className="text-gold-gradient">Comisiones</span>
+   887→            </h1>
+   888→            <p className="text-[#848E9C] text-sm">Bienvenido/a, <span className="text-[#EAECEF] font-medium">{user.name}</span>{user.licencia && (<>
+   889→              {' '}<Badge className="bg-[#F0B90B]/10 text-[#F0B90B] border-[#F0B90B]/20 text-xs ml-1">
+   890→                {LICENCIAS.find(l => l.id === user.licencia)?.label || user.licencia}
+   891→              </Badge></>)}.</p>
+   892→          </div>
+   893→
+   894→          {/* Stats Grid */}
+   895→          {loading ? (
+   896→            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+   897→              {[...Array(4)].map((_, i) => (
+   898→                <div key={i} className="glass-card rounded-2xl p-5 animate-pulse">
+   899→                  <div className="w-10 h-10 rounded-xl bg-[#2B3139] mb-3" />
+   900→                  <div className="h-4 bg-[#2B3139] rounded w-20 mb-2" />
+   901→                  <div className="h-7 bg-[#2B3139] rounded w-28" />
+   902→                </div>
+   903→              ))}
+   904→            </div>
+   905→          ) : stats ? (
+   906→            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+   907→              <StatCard icon={DollarSign} title="Comisión Total" value={`$${stats.totalCommissions.toFixed(2)}`} subtitle={`${stats.totalReferrals} referidos`} color="#F0B90B" />
+   908→              <StatCard icon={CheckCircle} title="Confirmadas" value={`$${stats.confirmedCommissions.toFixed(2)}`} subtitle="Listas para cobrar" color="#0ECB81" />
+   909→              <StatCard icon={DollarSign} title="Pagadas" value={`$${stats.paidCommissions.toFixed(2)}`} subtitle="Ya depositadas" color="#2EB6EA" />
+   910→              <StatCard icon={Clock} title="Pendientes" value={`$${stats.pendingCommissions.toFixed(2)}`} subtitle="Esperando depósito" color="#FCD535" />
+   911→            </div>
+   912→          ) : null}
+   913→
+   914→          {/* Commission Rate Highlight */}
+   915→          <div className="glass-card rounded-2xl p-5 mb-8 flex flex-col sm:flex-row items-center gap-4 border-[#F0B90B]/30">
+   916→            <div className="w-14 h-14 rounded-2xl bg-[#F0B90B]/10 flex items-center justify-center shrink-0">
+   917→              <Gift className="w-7 h-7 text-[#F0B90B]" />
+   918→            </div>
+   919→            <div className="flex-1 text-center sm:text-left">
+   920→              <h3 className="text-[#F0B90B] font-bold text-base">Tu tasa de comisión: 5%</h3>
+   921→              <p className="text-[#848E9C] text-sm">Por cada referido que deposite, ganas el 5% de su depósito automáticamente.</p>
+   922→            </div>
+   923→            <Badge className="bg-[#F0B90B]/10 text-[#F0B90B] border-[#F0B90B]/20 text-sm px-3 py-1 rounded-lg">ACTIVA</Badge>
+   924→          </div>
+   925→
+   926→          {/* Referrals Table */}
+   927→          <div className="glass-card rounded-2xl overflow-hidden">
+   928→            <div className="p-5 border-b border-[#2B3139] flex items-center gap-3">
+   929→              <LayoutDashboard className="w-5 h-5 text-[#F0B90B]" />
+   930→              <h2 className="text-lg font-bold text-[#EAECEF]">Historial de Referidos</h2>
+   931→              <Badge variant="secondary" className="bg-[#2B3139] text-[#848E9C] text-xs">
+   932→                {referrals.length} registros
+   933→              </Badge>
+   934→            </div>
+   935→
+   936→            {/* Desktop Table */}
+   937→            <div className="hidden md:block overflow-x-auto">
+   938→              <table className="w-full text-sm">
+   939→                <thead>
+   940→                  <tr className="border-b border-[#2B3139]">
+   941→                    <th className="text-left px-5 py-3 text-[#848E9C] font-medium">Referido</th>
+   942→                    <th className="text-left px-5 py-3 text-[#848E9C] font-medium">Red</th>
+   943→                    <th className="text-right px-5 py-3 text-[#848E9C] font-medium">Depósito</th>
+   944→                    <th className="text-right px-5 py-3 text-[#848E9C] font-medium">Comisión (5%)</th>
+   945→                    <th className="text-center px-5 py-3 text-[#848E9C] font-medium">Estado</th>
+   946→                    <th className="text-right px-5 py-3 text-[#848E9C] font-medium">Fecha</th>
+   947→                  </tr>
+   948→                </thead>
+   949→                <tbody>
+   950→                  {referrals.length === 0 ? (
+   951→                    <tr><td colSpan={6} className="text-center py-12 text-[#848E9C]">No tienes referidos aún. Comparte tu enlace.</td></tr>
+   952→                  ) : (
+   953→                    referrals.map((ref) => {
+   954→                      const sc = statusConfig[ref.status] || statusConfig.pending;
+   955→                      const StatusIcon = sc.icon;
+   956→                      return (
+   957→                        <tr key={ref.id} className="border-b border-[#2B3139]/50 hover:bg-[#2B3139]/30 transition-colors">
+   958→                          <td className="px-5 py-4">
+   959→                            <div>
+   960→                              <p className="text-[#EAECEF] font-medium">{ref.referredName}</p>
+   961→                              <p className="text-[#848E9C] text-xs">{ref.referredEmail}</p>
+   962→                            </div>
+   963→                          </td>
+   964→                          <td className="px-5 py-4 text-[#848E9C]">{ref.depositNetwork || '-'}</td>
+   965→                          <td className="px-5 py-4 text-right text-[#EAECEF] font-medium">${(ref.depositAmount || 0).toFixed(2)}</td>
+   966→                          <td className="px-5 py-4 text-right text-[#0ECB81] font-semibold">${ref.commission.toFixed(2)}</td>
+   967→                          <td className="px-5 py-4 text-center">
+   968→                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${sc.bg} ${sc.color}`}>
+   969→                              <StatusIcon className="w-3.5 h-3.5" />
+   970→                              {sc.label}
+   971→                            </span>
+   972→                          </td>
+   973→                          <td className="px-5 py-4 text-right text-[#848E9C]">{formatDate(ref.createdAt)}</td>
+   974→                        </tr>
+   975→                      );
+   976→                    })
+   977→                  )}
+   978→                </tbody>
+   979→              </table>
+   980→            </div>
+   981→
+   982→            {/* Mobile Cards */}
+   983→            <div className="md:hidden p-4 space-y-3">
+   984→              {referrals.length === 0 ? (
+   985→                <p className="text-center py-8 text-[#848E9C]">No tienes referidos aún.</p>
+   986→              ) : (
+   987→                referrals.map((ref) => {
+   988→                  const sc = statusConfig[ref.status] || statusConfig.pending;
+   989→                  const StatusIcon = sc.icon;
+   990→                  return (
+   991→                    <div key={ref.id} className="bg-[#0B0E11] rounded-xl p-4">
+   992→                      <div className="flex items-center justify-between mb-3">
+   993→                        <div>
+   994→                          <p className="text-[#EAECEF] font-medium text-sm">{ref.referredName}</p>
+   995→                          <p className="text-[#848E9C] text-xs">{ref.referredEmail}</p>
+   996→                        </div>
+   997→                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${sc.bg} ${sc.color}`}>
+   998→                          <StatusIcon className="w-3 h-3" /> {sc.label}
+   999→                        </span>
+  1000→                      </div>
+  1001→                      <div className="grid grid-cols-3 gap-2 text-center">
+  1002→                        <div>
+  1003→                          <p className="text-[#848E9C] text-[10px]">Red</p>
+  1004→                          <p className="text-[#EAECEF] text-xs font-medium">{ref.depositNetwork || '-'}</p>
+  1005→                        </div>
+  1006→                        <div>
+  1007→                          <p className="text-[#848E9C] text-[10px]">Depósito</p>
+  1008→                          <p className="text-[#EAECEF] text-xs font-medium">${(ref.depositAmount || 0).toFixed(2)}</p>
+  1009→                        </div>
+  1010→                        <div>
+  1011→                          <p className="text-[#848E9C] text-[10px]">Comisión</p>
+  1012→                          <p className="text-[#0ECB81] text-xs font-bold">${ref.commission.toFixed(2)}</p>
+  1013→                        </div>
+  1014→                      </div>
+  1015→                      <p className="text-[#848E9C] text-[10px] mt-2 text-right">{formatDate(ref.createdAt)}</p>
+  1016→                    </div>
+  1017→                  );
+  1018→                })
+  1019→              )}
+  1020→            </div>
+  1021→          </div>
+  1022→        </div>
+  1023→      </main>
+  1024→
+  1025→      {/* Footer */}
+  1026→      <footer className="bg-[#0B0E11] border-t border-[#2B3139] mt-auto">
+  1027→        <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
+  1028→          <div className="flex items-center justify-between gap-4">
+  1029→            <span className="text-xs text-[#848E9C]">© 2025 GCRM Exchange. Todos los derechos reservados.</span>
+  1030→            <div className="flex items-center gap-4 text-xs text-[#848E9C]">
+  1031→              <a href="#" className="hover:text-[#F0B90B] transition-colors">Términos</a>
+  1032→              <a href="#" className="hover:text-[#F0B90B] transition-colors">Privacidad</a>
+  1033→              <a href="#" className="hover:text-[#F0B90B] transition-colors">Soporte</a>
+  1034→            </div>
+  1035→          </div>
+  1036→        </div>
+  1037→      </footer>
+  1038→    </div>
+  1039→  );
+  1040→}
+  1041→
+  1042→/* ─── STAT CARD ─── */
+  1043→
+  1044→function StatCard({ icon: Icon, title, value, subtitle, color }: {
+  1045→  icon: typeof DollarSign; title: string; value: string; subtitle: string; color: string;
+  1046→}) {
+  1047→  return (
+  1048→    <div className="glass-card rounded-2xl p-5">
+  1049→      <div className="flex items-center gap-3 mb-3">
+  1050→        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${color}15` }}>
+  1051→          <Icon className="w-5 h-5" style={{ color }} />
+  1052→        </div>
+  1053→        <span className="text-[#848E9C] text-xs font-medium uppercase tracking-wider">{title}</span>
+  1054→      </div>
+  1055→      <p className="text-2xl font-bold text-[#EAECEF] mb-1">{value}</p>
+  1056→      <p className="text-[#848E9C] text-xs">{subtitle}</p>
+  1057→    </div>
+  1058→  );
+  1059→}
+  1060→
+  1061→/* ─── LANDING PAGE ─── */
+  1062→
+  1063→function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister: () => void }) {
+  1064→  const [formData, setFormData] = useState({ usuario: '', nombres: '', correo: '', password: '', red: '', hashPago: '', linkReferido: '', tradingGcrm: '' });
+  1065→  const [showPassword, setShowPassword] = useState(false);
+  1066→  const [selectedNetwork, setSelectedNetwork] = useState('');
+  1067→  const [selectedLicencia, setSelectedLicencia] = useState('');
+  1068→  const [isSubmitting, setIsSubmitting] = useState(false);
+  1069→  const { toast } = useToast();
+  1070→
+  1071→  const selectedNet = USDT_NETWORKS.find((n) => n.id === selectedNetwork);
+  1072→
+  1073→  const handleSubmit = async (e: React.FormEvent) => {
+  1074→    e.preventDefault();
+  1075→    if (!formData.nombres.trim()) {
+  1076→      toast({ title: 'Campo requerido', description: 'Por favor ingresa tu nombre completo.', variant: 'destructive' });
+  1077→      return;
+  1078→    }
+  1079→    if (!formData.correo.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.correo)) {
+  1080→      toast({ title: 'Correo inválido', description: 'Por favor ingresa un correo electrónico válido.', variant: 'destructive' });
+  1081→      return;
+  1082→    }
+  1083→    if (!formData.password || formData.password.length < 6) {
+  1084→      toast({ title: 'Contraseña requerida', description: 'La contraseña debe tener al menos 6 caracteres.', variant: 'destructive' });
+  1085→      return;
+  1086→    }
+  1087→    setIsSubmitting(true);
+  1088→    await new Promise((r) => setTimeout(r, 1500));
+  1089→    setIsSubmitting(false);
+  1090→    toast({ title: 'Solicitud enviada', description: 'Por favor inicia sesión para ver tus comisiones.' });
+  1091→    onRegister();
+  1092→  };
+  1093→
+  1094→  return (
+  1095→    <div className="min-h-screen bg-[#0B0E11] flex flex-col">
+  1096→      {/* Navbar */}
+  1097→      <header className="sticky top-0 z-50 bg-[#0B0E11]/95 backdrop-blur-md border-b border-[#2B3139]">
+  1098→        <nav className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
+  1099→          <div className="flex items-center gap-3">
+  1100→            <img src="/assets/gcrm-logo.png" alt="GCRM Logo" className="w-8 h-8 rounded-full" />
+  1101→            <span className="text-xl font-bold text-gold-gradient">GCRM Exchange</span>
+  1102→          </div>
+  1103→          <div className="hidden md:flex items-center gap-6 text-sm text-[#848E9C]">
+  1104→            <a href="#form" className="hover:text-[#F0B90B] transition-colors">Registro</a>
+  1105→            <a href="#deposit" className="hover:text-[#F0B90B] transition-colors">Depositar</a>
+  1106→            <a href="#exchanges" className="hover:text-[#F0B90B] transition-colors">Exchanges</a>
+  1107→            <a href="#hotcoin" className="hover:text-[#F0B90B] transition-colors">Hotcoin</a>
+  1108→          </div>
+  1109→          <div className="flex items-center gap-2">
+  1110→            <Button onClick={onLogin} variant="outline" className="border-[#2B3139] text-[#EAECEF] hover:bg-[#1E2329] rounded-lg text-sm gap-2">
+  1111→              <LogIn className="w-4 h-4" />
+  1112→              <span className="hidden sm:inline">Ingresar</span>
+  1113→            </Button>
+  1114→          </div>
+  1115→        </nav>
+  1116→      </header>
+  1117→
+  1118→      <main className="flex-1">
+  1119→        {/* Hero */}
+  1120→        <section className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0a0d12 0%, #0f1923 30%, #0B0E11 60%, #0d1117 100%)' }}>
+  1121→          {/* Animated particle network */}
+  1122→          <ParticleBackground />
+  1123→          {/* Subtle radial glow */}
+  1124→          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 70% 40%, rgba(240, 185, 11, 0.06) 0%, transparent 60%), radial-gradient(ellipse at 20% 80%, rgba(14, 203, 129, 0.04) 0%, transparent 50%)' }} />
+  1125→          <div className="relative max-w-7xl mx-auto px-4 md:px-6 py-16 md:py-24 lg:py-32" style={{ zIndex: 2 }}>
+  1126→            <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+  1127→              <div className="flex-1 text-center lg:text-left animate-fade-in-up">
+  1128→                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#F0B90B]/10 border border-[#F0B90B]/20 mb-6">
+  1129→                  <div className="w-2 h-2 rounded-full bg-[#0ECB81] animate-pulse" />
+  1130→                  <span className="text-[#F0B90B] text-xs font-medium">Listado en múltiples exchanges</span>
+  1131→                </div>
+  1132→                <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-6">
+  1133→                  <span className="text-[#EAECEF]">MIEMBROS EJECUTIVOS</span><br />
+  1134→                  <span className="text-gold-gradient">GCRM Exchange</span>
+  1135→                </h1>
+  1136→                <p className="text-[#848E9C] text-base md:text-lg leading-relaxed mb-8 max-w-lg mx-auto lg:mx-0">
+  1137→                  Registro oficial de Miembros Ejecutivos. Licencias desde <span className="text-[#F0B90B] font-semibold">$150</span>.
+  1138→                  Recibe comisión del <span className="text-[#F0B90B] font-semibold">5%</span> por cada registro referido.
+  1139→                </p>
+  1140→                <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
+  1141→                  <Button onClick={() => { toast({ title: 'Airdrop GCRM', description: 'Conectando al Airdrop... Se redirigirá a la plataforma de Airdrop.' }); }} size="lg"
+  1142→                    className="w-full sm:w-auto bg-gradient-to-r from-[#F0B90B] to-[#F8D12F] hover:from-[#F8D12F] hover:to-[#F0B90B] text-[#0B0E11] font-bold rounded-xl px-8 py-6 text-base gap-2 transition-all hover:shadow-lg hover:shadow-[#F0B90B]/20">
+  1143→                    <Plane className="w-5 h-5" />
+  1144→                    Airdrop GCRM
+  1145→                  </Button>
+  1146→                  <Button onClick={onRegister} size="lg"
+  1147→                    className="w-full sm:w-auto bg-[#F0B90B] hover:bg-[#F8D12F] text-[#0B0E11] font-bold rounded-xl px-8 py-6 text-base animate-pulse-gold">
+  1148→                    Registro Ejecutivo <ArrowRight className="w-5 h-5 ml-2" />
+  1149→                  </Button>
+  1150→                </div>
+  1151→              </div>
+  1152→              <div className="shrink-0 animate-coin-container">
+  1153→                <div className="relative">
+  1154→                  <img src="/assets/gcrm-coin.png" alt="GCRM Coin" className="w-48 h-48 md:w-64 md:h-64 lg:w-72 lg:h-72 object-contain animate-coin-glow relative z-10" />
+  1155→                </div>
+  1156→              </div>
+  1157→            </div>
+  1158→          </div>
+  1159→        </section>
+  1160→
+  1161→        {/* Features */}
+  1162→        <section className="py-16 md:py-20 bg-[#0B0E11]">
+  1163→          <div className="max-w-7xl mx-auto px-4 md:px-6">
+  1164→            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+  1165→              {FEATURES.map((f, i) => (
+  1166→                <div key={f.title} className="glass-card rounded-2xl p-6 hover:border-[#F0B90B]/30 transition-all duration-300 group">
+  1167→                  <div className="w-12 h-12 rounded-xl bg-[#F0B90B]/10 flex items-center justify-center mb-4 group-hover:bg-[#F0B90B]/20 transition-colors">
+  1168→                    <f.icon className="w-6 h-6 text-[#F0B90B]" />
+  1169→                  </div>
+  1170→                  <h3 className="text-[#EAECEF] font-bold text-base mb-2">{f.title}</h3>
+  1171→                  <p className="text-[#848E9C] text-sm leading-relaxed">{f.desc}</p>
+  1172→                </div>
+  1173→              ))}
+  1174→            </div>
+  1175→          </div>
+  1176→        </section>
+  1177→
+  1178→        {/* Registration Form */}
+  1179→        <section id="form" className="py-16 md:py-20 bg-[#0B0E11]">
+  1180→          <div className="max-w-7xl mx-auto px-4 md:px-6">
+  1181→            <div className="max-w-2xl mx-auto">
+  1182→              <div className="text-center mb-10">
+  1183→                <div className="inline-flex items-center gap-2 mb-4">
+  1184→                  <Wallet className="w-5 h-5 text-[#F0B90B]" />
+  1185→                  <span className="text-[#F0B90B] text-sm font-medium uppercase tracking-wider">Formulario de Registro</span>
+  1186→                </div>
+  1187→                <h2 className="text-2xl md:text-3xl font-bold text-[#EAECEF] mb-3">
+  1188→                  Registro Miembros Ejecutivos <span className="text-gold-gradient">GCRM</span>
+  1189→                </h2>
+  1190→                <p className="text-[#848E9C] text-sm">Selecciona tu licencia ejecutiva y completa el registro para acceder a comisiones del 5%.</p>
+  1191→              </div>
+  1192→              <form onSubmit={handleSubmit} className="glass-card rounded-2xl p-6 md:p-8 space-y-6">
+  1193→                {/* Usuario */}
+  1194→                <div className="space-y-2">
+  1195→                  <Label htmlFor="usuario" className="text-[#EAECEF] text-sm font-medium flex items-center gap-2">
+  1196→                    <User className="w-4 h-4 text-[#F0B90B]" />
+  1197→                    Usuario
+  1198→                  </Label>
+  1199→                  <Input id="usuario" type="text" placeholder="Ingresa tu nombre de usuario" value={formData.usuario} onChange={(e) => setFormData((p) => ({ ...p, usuario: e.target.value }))}
+  1200→                    className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm" />
+  1201→                </div>
+  1202→                {/* Nombres */}
+  1203→                <div className="space-y-2">
+  1204→                  <Label htmlFor="nombres" className="text-[#EAECEF] text-sm font-medium">Nombres Completos <span className="text-red-400">*</span></Label>
+  1205→                  <Input id="nombres" type="text" placeholder="Ingresa tu nombre completo" value={formData.nombres} onChange={(e) => setFormData((p) => ({ ...p, nombres: e.target.value }))}
+  1206→                    className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm" />
+  1207→                </div>
+  1208→                <div className="space-y-2">
+  1209→                  <Label htmlFor="correo" className="text-[#EAECEF] text-sm font-medium">Correo Electrónico <span className="text-red-400">*</span></Label>
+  1210→                  <Input id="correo" type="email" placeholder="tucorreo@ejemplo.com" value={formData.correo} onChange={(e) => setFormData((p) => ({ ...p, correo: e.target.value }))}
+  1211→                    className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm" />
+  1212→                </div>
+  1213→                {/* Contraseña */}
+  1214→                <div className="space-y-2">
+  1215→                  <Label htmlFor="password" className="text-[#EAECEF] text-sm font-medium">Contraseña <span className="text-red-400">*</span></Label>
+  1216→                  <div className="relative">
+  1217→                    <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="Mínimo 6 caracteres" value={formData.password} onChange={(e) => setFormData((p) => ({ ...p, password: e.target.value }))}
+  1218→                      className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm pr-10" />
+  1219→                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#848E9C] hover:text-[#EAECEF] transition-colors">
+  1220→                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+  1221→                    </button>
+  1222→                  </div>
+  1223→                </div>
+  1224→                <div id="deposit" className="space-y-2">
+  1225→                  <Label className="text-[#EAECEF] text-sm font-medium">Depósito USDT - Selecciona Red</Label>
+  1226→                  <Select value={selectedNetwork} onValueChange={setSelectedNetwork}>
+  1227→                    <SelectTrigger className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] rounded-xl h-12 text-sm">
+  1228→                      <SelectValue placeholder="Selecciona la red de depósito" />
+  1229→                    </SelectTrigger>
+  1230→                    <SelectContent className="bg-[#1E2329] border-[#2B3139]">
+  1231→                      {USDT_NETWORKS.map((net) => (
+  1232→                        <SelectItem key={net.id} value={net.id} className="text-[#EAECEF] focus:bg-[#2B3139] focus:text-[#F0B90B]">
+  1233→                          <span className="flex items-center gap-2"><span>{net.icon}</span><span>{net.label}</span></span>
+  1234→                        </SelectItem>
+  1235→                      ))}
+  1236→                    </SelectContent>
+  1237→                  </Select>
+  1238→                  {selectedNet && (
+  1239→                    <div className="mt-3 p-4 bg-[#0B0E11] rounded-xl border border-[#2B3139]">
+  1240→                      <div className="flex items-center justify-between mb-2">
+  1241→                        <span className="text-[#848E9C] text-xs font-medium">{selectedNet.icon} Dirección {selectedNet.label}</span>
+  1242→                        <CopyButton text={selectedNet.address} />
+  1243→                      </div>
+  1244→                      <p className="text-[#EAECEF] text-xs md:text-sm font-mono break-all leading-relaxed">{selectedNet.address}</p>
+  1245→                    </div>
+  1246→                  )}
+  1247→                </div>
+  1248→                {/* Hash Pago */}
+  1249→                <div className="space-y-2">
+  1250→                  <Label htmlFor="hashPago" className="text-[#EAECEF] text-sm font-medium flex items-center gap-2">
+  1251→                    <Hash className="w-4 h-4 text-[#F0B90B]" />
+  1252→                    Hash Pago
+  1253→                  </Label>
+  1254→                  <Input id="hashPago" type="text" placeholder="Ingresa el hash de tu pago USDT" value={formData.hashPago} onChange={(e) => setFormData((p) => ({ ...p, hashPago: e.target.value }))}
+  1255→                    className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm font-mono" />
+  1256→                  <p className="text-[#5E6673] text-xs">Pega aquí el hash de transacción de tu depósito USDT.</p>
+  1257→                </div>
+  1258→                {/* Codigo Usuario */}
+  1259→                <div className="space-y-2">
+  1260→                  <Label htmlFor="codigoUsuario" className="text-[#EAECEF] text-sm font-medium">Codigo Usuario</Label>
+  1261→                  <Input id="codigoUsuario" type="text" placeholder="Ingresa tu codigo de usuario" value={formData.linkReferido} onChange={(e) => setFormData((p) => ({ ...p, linkReferido: e.target.value }))}
+  1262→                    className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm" />
+  1263→                </div>
+  1264→                {/* TRADING GCRM */}
+  1265→                <div className="space-y-2">
+  1266→                  <Label className="text-[#EAECEF] text-sm font-medium flex items-center gap-2">
+  1267→                    <BarChart3 className="w-4 h-4 text-[#F0B90B]" />
+  1268→                    TRADING GCRM
+  1269→                  </Label>
+  1270→                  <Select value={formData.tradingGcrm} onValueChange={(val) => setFormData((p) => ({ ...p, tradingGcrm: val }))}>
+  1271→                    <SelectTrigger className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] rounded-xl h-12 text-sm">
+  1272→                      <SelectValue placeholder="Selecciona tu paquete de Trading" />
+  1273→                    </SelectTrigger>
+  1274→                    <SelectContent className="bg-[#1E2329] border-[#2B3139]">
+  1275→                      {TRADING_GCRM_OPTIONS.map((opt) => (
+  1276→                        <SelectItem key={opt.id} value={opt.id} className="text-[#EAECEF] focus:bg-[#2B3139] focus:text-[#F0B90B]">
+  1277→                          <span className="flex items-center gap-2">
+  1278→                            <TrendingUp className="w-4 h-4 text-[#0ECB81]" />
+  1279→                            {opt.label}
+  1280→                          </span>
+  1281→                        </SelectItem>
+  1282→                      ))}
+  1283→                    </SelectContent>
+  1284→                  </Select>
+  1285→                  {formData.tradingGcrm && (
+  1286→                    <div className="flex items-center gap-2 p-3 bg-[#0B0E11] rounded-lg border border-[#0ECB81]/20">
+  1287→                      <TrendingUp className="w-4 h-4 text-[#0ECB81] shrink-0" />
+  1288→                      <p className="text-xs text-[#848E9C]">
+  1289→                        Paquete seleccionado: <span className="text-[#0ECB81] font-semibold">{TRADING_GCRM_OPTIONS.find(o => o.id === formData.tradingGcrm)?.label}</span>
+  1290→                      </p>
+  1291→                    </div>
+  1292→                  )}
+  1293→                </div>
+  1294→                {/* Licencia Ejecutiva */}
+  1295→                <div className="space-y-2">
+  1296→                  <Label className="text-[#EAECEF] text-sm font-medium flex items-center gap-2">
+  1297→                    <Crown className="w-4 h-4 text-[#F0B90B]" />
+  1298→                    Licencia Ejecutiva
+  1299→                  </Label>
+  1300→                  <Select value={selectedLicencia} onValueChange={setSelectedLicencia}>
+  1301→                    <SelectTrigger className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] rounded-xl h-12 text-sm">
+  1302→                      <SelectValue placeholder="Selecciona tu nivel de licencia" />
+  1303→                    </SelectTrigger>
+  1304→                    <SelectContent className="bg-[#1E2329] border-[#2B3139]">
+  1305→                      {LICENCIAS.map((l) => (
+  1306→                        <SelectItem key={l.id} value={l.id} className="text-[#EAECEF] focus:bg-[#2B3139] focus:text-[#F0B90B]">
+  1307→                          <span className="flex items-center justify-between w-full gap-6">
+  1308→                            <span className="flex items-center gap-2">
+  1309→                              {l.id === 'supervisor' && <Crown className="w-4 h-4 text-[#F0B90B]" />}
+  1310→                              {l.id === 'coordinador' && <Crown className="w-4 h-4 text-[#F0B90B]" />}
+  1311→                              {l.id === 'promotor' && <Award className="w-4 h-4 text-[#F0B90B]" />}
+  1312→                              {l.id === 'asociado' && <Star className="w-4 h-4 text-[#F0B90B]" />}
+  1313→                              {l.label}
+  1314→                            </span>
+  1315→                            <span className="text-[#F0B90B] font-bold">{l.price}</span>
+  1316→                          </span>
+  1317→                        </SelectItem>
+  1318→                      ))}
+  1319→                    </SelectContent>
+  1320→                  </Select>
+  1321→                  {selectedLicencia && (
+  1322→                    <div className="flex items-center gap-2 p-3 bg-[#0B0E11] rounded-lg border border-[#2B3139]">
+  1323→                      <CheckCircle className="w-4 h-4 text-[#0ECB81] shrink-0" />
+  1324→                      <p className="text-xs text-[#848E9C]">
+  1325→                        Licencia <span className="text-[#F0B90B] font-semibold">{LICENCIAS.find(l => l.id === selectedLicencia)?.label}</span> - Inversión: <span className="text-[#EAECEF] font-semibold">{LICENCIAS.find(l => l.id === selectedLicencia)?.price} USDT</span>
+  1326→                      </p>
+  1327→                    </div>
+  1328→                  )}
+  1329→                </div>
+  1330→                <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-[#F0B90B]/10 to-[#F0B90B]/5 rounded-xl border border-[#F0B90B]/20">
+  1331→                  <Gift className="w-6 h-6 text-[#F0B90B] shrink-0" />
+  1332→                  <div>
+  1333→                    <p className="text-[#F0B90B] font-bold text-sm">Comisión 5% por Registro</p>
+  1334→                    <p className="text-[#848E9C] text-xs">Gana un 5% de comisión automática por cada persona que se registre con tu enlace.</p>
+  1335→                  </div>
+  1336→                </div>
+  1337→                <Button type="submit" disabled={isSubmitting}
+  1338→                  className="w-full bg-[#F0B90B] hover:bg-[#F8D12F] text-[#0B0E11] font-bold rounded-xl h-12 text-base transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+  1339→                  {isSubmitting ? (
+  1340→                    <span className="flex items-center gap-2"><div className="w-4 h-4 border-2 border-[#0B0E11]/30 border-t-[#0B0E11] rounded-full animate-spin" />Procesando...</span>
+  1341→                  ) : (
+  1342→                    <span className="flex items-center justify-center gap-2"><Users className="w-5 h-5" />Registrarme Ahora</span>
+  1343→                  )}
+  1344→                </Button>
+  1345→              </form>
+  1346→            </div>
+  1347→          </div>
+  1348→        </section>
+  1349→
+  1350→        {/* Exchanges Carousel */}
+  1351→        <section id="exchanges" className="py-16 md:py-20 bg-[#0B0E11]">
+  1352→          <div className="max-w-7xl mx-auto px-4 md:px-6"><ExchangeCarousel /></div>
+  1353→        </section>
+  1354→
+  1355→        {/* Hotcoin */}
+  1356→        <section id="hotcoin" className="py-16 md:py-20 bg-[#0B0E11]">
+  1357→          <div className="max-w-5xl mx-auto px-4 md:px-6"><HotcoinSection /></div>
+  1358→        </section>
+  1359→
+  1360→        {/* Bottom CTA */}
+  1361→        <section className="py-16 md:py-20 bg-[#0B0E11]">
+  1362→          <div className="max-w-4xl mx-auto px-4 md:px-6 text-center">
+  1363→            <h2 className="text-2xl md:text-3xl font-bold text-[#EAECEF] mb-4">
+  1364→              Comienza a Ganar con <span className="text-gold-gradient">GCRM</span> Hoy
+  1365→            </h2>
+  1366→            <p className="text-[#848E9C] text-base mb-8 max-w-xl mx-auto">
+  1367→              Únete a miles de usuarios que ya están generando ingresos con la comisión del 5% por registro.
+  1368→            </p>
+  1369→            <Button onClick={onRegister} size="lg" className="bg-[#F0B90B] hover:bg-[#F8D12F] text-[#0B0E11] font-bold rounded-xl px-10 py-6 text-base">
+  1370→              Registrarse Ahora <ArrowRight className="w-5 h-5 ml-2" />
+  1371→            </Button>
+  1372→          </div>
+  1373→        </section>
+  1374→      </main>
+  1375→
+  1376→      {/* Footer */}
+  1377→      <footer className="bg-[#0B0E11] border-t border-[#2B3139] mt-auto">
+  1378→        <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
+  1379→          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+  1380→            <div className="flex items-center gap-3">
+  1381→              <img src="/assets/gcrm-logo.png" alt="GCRM" className="w-6 h-6 rounded-full" />
+  1382→              <span className="text-sm text-[#848E9C]">© 2025 GCRM Exchange. Todos los derechos reservados.</span>
+  1383→            </div>
+  1384→            <div className="flex items-center gap-6 text-xs text-[#848E9C]">
+  1385→              <a href="#" className="hover:text-[#F0B90B] transition-colors">Términos</a>
+  1386→              <a href="#" className="hover:text-[#F0B90B] transition-colors">Privacidad</a>
+  1387→              <a href="#" className="hover:text-[#F0B90B] transition-colors">Soporte</a>
+  1388→            </div>
+  1389→          </div>
+  1390→        </div>
+  1391→      </footer>
+  1392→    </div>
+  1393→  );
+  1394→}
+  1395→
+  1396→/* ─── MAIN: VIEW ROUTER ─── */
+  1397→
+  1398→export default function Home() {
+  1399→  const [user, setUser] = useState<SessionUser | null>(null);
+  1400→  const [checking, setChecking] = useState(true);
+  1401→  const [showLogin, setShowLogin] = useState(false);
+  1402→  const [showRegister, setShowRegister] = useState(false);
+  1403→
+  1404→  // Check session on mount
+  1405→  useEffect(() => {
+  1406→    fetch('/api/auth/me')
+  1407→      .then((res) => res.json())
+  1408→      .then((data) => {
+  1409→        if (data.user) setUser(data.user);
+  1410→      })
+  1411→      .catch(() => {})
+  1412→      .finally(() => setChecking(false));
+  1413→  }, []);
+  1414→
+  1415→  if (checking) {
+  1416→    return (
+  1417→      <div className="min-h-screen bg-[#0B0E11] flex items-center justify-center">
+  1418→        <Loader2 className="w-8 h-8 text-[#F0B90B] animate-spin" />
+  1419→      </div>
+  1420→    );
+  1421→  }
+  1422→
+  1423→  // Logged in → Dashboard
+  1424→  if (user) {
+  1425→    return (
+  1426→      <>
+  1427→        <Dashboard user={user} onLogout={() => setUser(null)} />
+  1428→      </>
+  1429→    );
+  1430→  }
+  1431→
+  1432→  // Not logged in → Landing + Login/Register dialogs
+  1433→  return (
+  1434→    <>
+  1435→      <LandingPage onLogin={() => setShowLogin(true)} onRegister={() => setShowRegister(true)} />
+  1436→      <LoginDialog open={showLogin} onOpenChange={setShowLogin} onSwitchToRegister={() => setShowRegister(true)} />
+  1437→      <RegisterDialog open={showRegister} onOpenChange={setShowRegister} onSwitchToLogin={() => setShowLogin(true)} />
+  1438→    </>
+  1439→  );
+  1440→}

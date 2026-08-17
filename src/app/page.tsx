@@ -659,8 +659,7 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
       <header className="sticky top-0 z-50 bg-[#0B0E11]/95 backdrop-blur-md border-b border-[#2B3139]">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/assets/gcrm-logo.png" alt="GCRM" className="w-8 h-8 rounded-full" />
-            <span className="text-xl font-bold text-gold-gradient">GCRM Admin</span>
+            <img src="/assets/gcrm-logo.png" alt="GCRM" className="h-9 md:h-10 w-auto object-contain" />
             <Badge className="bg-red-500/10 text-red-400 border-red-500/20 text-xs"><ShieldCheck className="w-3 h-3 mr-1" />Administrador</Badge>
           </div>
           <Button onClick={onClose} variant="outline" className="border-[#2B3139] text-[#848E9C] hover:bg-[#1E2329] rounded-lg text-sm gap-2">
@@ -853,9 +852,8 @@ function Dashboard({ user, onLogout }: { user: SessionUser; onLogout: () => void
       {/* Dashboard Navbar */}
       <header className="sticky top-0 z-50 bg-[#0B0E11]/95 backdrop-blur-md border-b border-[#2B3139]">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src="/assets/gcrm-logo.png" alt="GCRM Logo" className="w-8 h-8 rounded-full" />
-            <span className="text-xl font-bold text-gold-gradient">GCRM Exchange</span>
+          <div className="flex items-center">
+            <img src="/assets/gcrm-logo.png" alt="GCRM Logo" className="h-9 md:h-10 w-auto object-contain" />
           </div>
           <div className="flex items-center gap-3">
             {user.role === 'admin' && (
@@ -1096,9 +1094,8 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
       {/* Navbar */}
       <header className="sticky top-0 z-50 bg-[#0B0E11]/95 backdrop-blur-md border-b border-[#2B3139]">
         <nav className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src="/assets/gcrm-logo.png" alt="GCRM Logo" className="w-8 h-8 rounded-full" />
-            <span className="text-xl font-bold text-gold-gradient">GCRM Exchange</span>
+          <div className="flex items-center">
+            <img src="/assets/gcrm-logo.png" alt="GCRM Logo" className="h-9 md:h-10 w-auto object-contain" />
           </div>
           <div className="hidden md:flex items-center gap-6 text-sm text-[#848E9C]">
             <a href="#form" className="hover:text-[#F0B90B] transition-colors">Registro</a>
