@@ -1,6 +1,7 @@
 // Auto-switch: Prisma (local dev) vs MemoryStore (Netlify serverless)
 
 import type { User, Referral } from './store';
+import { db as memoryDb } from './store';
 
 export interface DBUser {
   id: string;
@@ -33,49 +34,38 @@ export interface DBReferral {
   updatedAt: string;
 }
 
-// Detect serverless: NETLIFY, VERCEL, AWS_LAMBDA, or any read-only filesystem
-const IS_SERVERLESS =
-  typeof process.env.NETLIFY !== 'undefined' ||
-  typeof process.env.NETLIFY_NEXT_PLUGIN_SKIP !== 'undefined' ||
-  typeof process.env.AWS_LAMBDA_FUNCTION_NAME !== 'undefined' ||
-  process.env.NODE_ENV === 'production';
-
 export async function getDB() {
-  if (IS_SERVERLESS) {
-    try {
-      const mod = await import('./store');
-      return mod.db;
-    } catch (err) {
-      console.error('Failed to load MemoryStore:', err);
-      // Fallback: try Prisma as last resort
-    }
+  // On Netlify serverless, always use in-memory store (Prisma needs writable FS)
+  if (typeof process.env.NETLIFY !== 'undefined') {
+    return memoryDb;
   }
 
-  const { PrismaClient } = await import('@prisma/client');
-
-  const globalForPrisma = globalThis as unknown as {
-    prisma: any | undefined
-  };
-
-  const prisma = globalForPrisma.prisma ?? new PrismaClient();
-  if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
-
-  return {
-    user: {
-      findUnique: (args: any) => prisma.user.findUnique(args),
-      findFirst: (args: any) => prisma.user.findFirst(args),
-      findMany: (args: any) => prisma.user.findMany(args),
-      create: (args: any) => prisma.user.create(args),
-      update: (args: any) => prisma.user.update(args),
-      delete: (args: any) => prisma.user.delete(args),
-      count: (args: any) => prisma.user.count(args),
-      groupBy: (args: any) => prisma.user.groupBy(args),
-    },
-    referral: {
-      findMany: (args: any) => prisma.referral.findMany(args),
-      create: (args: any) => prisma.referral.create(args),
-      count: (args: any) => prisma.referral.count(args),
-      aggregate: (args: any) => prisma.referral.aggregate(args),
-    },
-  };
+  // Local dev: use Prisma with SQLite
+  try {
+    const { PrismaClient } = await import('@prisma/client');
+    const globalForPrisma = globalThis as unknown as { prisma: any | undefined };
+    const prisma = globalForPrisma.prisma ?? new PrismaClient();
+    if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+    return {
+      user: {
+        findUnique: (args: any) => prisma.user.findUnique(args),
+        findFirst: (args: any) => prisma.user.findFirst(args),
+        findMany: (args: any) => prisma.user.findMany(args),
+        create: (args: any) => prisma.user.create(args),
+        update: (args: any) => prisma.user.update(args),
+        delete: (args: any) => prisma.user.delete(args),
+        count: (args: any) => prisma.user.count(args),
+        groupBy: (args: any) => prisma.user.groupBy(args),
+      },
+      referral: {
+        findMany: (args: any) => prisma.referral.findMany(args),
+        create: (args: any) => prisma.referral.create(args),
+        count: (args: any) => prisma.referral.count(args),
+        aggregate: (args: any) => prisma.referral.aggregate(args),
+      },
+    };
+  } catch (err) {
+    console.error('Prisma failed, using MemoryStore:', err);
+    return memoryDb;
+  }
 }
