@@ -800,10 +800,19 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
                   </Button>
                 </div>
               </div>
-              <div className="shrink-0 animate-float">
+              <div className="shrink-0 animate-coin-container">
                 <div className="relative">
-                  <img src="/assets/gcrm-coin.png" alt="GCRM Coin" className="w-48 h-48 md:w-64 md:h-64 lg:w-72 lg:h-72 object-contain drop-shadow-2xl" />
-                  <div className="absolute inset-0 rounded-full bg-[#F0B90B]/10 blur-3xl -z-10 scale-150" />
+                  {/* Orbit ring */}
+                  <div className="absolute inset-[-20px] rounded-full border border-[#F0B90B]/20 animate-orbit-ring" />
+                  <div className="absolute inset-[-40px] rounded-full border border-dashed border-[#F0B90B]/10 animate-orbit-ring" style={{ animationDirection: 'reverse', animationDuration: '15s' }} />
+                  {/* Glow background */}
+                  <div className="absolute inset-0 bg-[#F0B90B]/10 blur-3xl scale-150 animate-coin-glow" />
+                  {/* Coin image */}
+                  <img src="/assets/gcrm-coin.png" alt="GCRM Coin" className="w-48 h-48 md:w-64 md:h-64 lg:w-72 lg:h-72 object-contain animate-coin-glow relative z-10" />
+                  {/* Sparkle dots */}
+                  <div className="absolute top-2 right-4 w-2 h-2 rounded-full bg-[#F0B90B] animate-pulse" />
+                  <div className="absolute bottom-6 left-2 w-1.5 h-1.5 rounded-full bg-[#F8D12F] animate-pulse" style={{ animationDelay: '0.5s' }} />
+                  <div className="absolute top-1/2 -right-3 w-1 h-1 rounded-full bg-[#0ECB81] animate-pulse" style={{ animationDelay: '1s' }} />
                 </div>
               </div>
             </div>
