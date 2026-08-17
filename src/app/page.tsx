@@ -174,8 +174,12 @@ function ExchangeCarousel() {
       <div className="text-center mb-6">
         <p className="text-[#848E9C] text-sm uppercase tracking-widest mb-1">Listado en Exchanges</p>
         <h2 className="text-xl md:text-2xl font-bold text-[#EAECEF]">
-          Disponible en los Mejores <span className="text-gold-gradient">Exchanges</span> del Mundo
+          <span className="text-gold-gradient">GCRM EN PRE LANZAMIENTO</span> EN LOS EXCHANGES
         </h2>
+        <p className="text-[#848E9C] text-sm mt-2 max-w-xl mx-auto">
+          GCRM avanza hacia los principales exchanges del mundo, acercando la nueva era de las finanzas descentralizadas.
+        </p>
+        <p className="text-[#F0B90B] text-sm font-semibold mt-2">Próximamente: GCRM Exchange + GCRM Wallet.</p>
       </div>
       <div className="relative group">
         {canScrollLeft && (
