@@ -11,14 +11,17 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      String   @default("user")
-  licencia  String   @default("") // promotor, coordinador, senior, supervisor
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(cuid())
+  name           String
+  username       String   @default("")
+  email          String   @unique
+  password        String
+  role           String   @default("user")
+  licencia       String   @default("") // promotor, coordinador, senior, supervisor
+  paymentHash    String   @default("") // hash de pago USDT
+  tradingPackage String   @default("") // 2000 GCRM, 4000 GCRM, 8000 GCRM, 16000 GCRM
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   referrals Referral[]
 }

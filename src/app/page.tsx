@@ -22,7 +22,7 @@ import {
   Copy, Check, ChevronLeft, ChevronRight, ExternalLink, Shield, Zap, Gift,
   ArrowRight, Wallet, Globe, Users, TrendingUp, LogOut, LogIn, User,
   DollarSign, Clock, CheckCircle, AlertCircle, LayoutDashboard,
-  Eye, EyeOff, Loader2, BarChart3, UserPlus, Plane, Crown, Star, Award,
+  Eye, EyeOff, Loader2, BarChart3, UserPlus, Plane, Crown, Star, Award, Hash,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -86,6 +86,13 @@ const EXCHANGES = [
   { name: 'GCRM Exchange', color: '#F0B90B', initial: 'G' },
   { name: 'Coinbase', color: '#0052FF', initial: 'C' },
   { name: 'Binance', color: '#F0B90B', initial: 'B' },
+];
+
+const TRADING_GCRM_OPTIONS = [
+  { id: '2000', label: '2000 GCRM' },
+  { id: '4000', label: '4000 GCRM' },
+  { id: '8000', label: '8000 GCRM' },
+  { id: '16000', label: '16000 GCRM' },
 ];
 
 const FEATURES = [
@@ -706,7 +713,7 @@ function StatCard({ icon: Icon, title, value, subtitle, color }: {
 /* ─── LANDING PAGE ─── */
 
 function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister: () => void }) {
-  const [formData, setFormData] = useState({ nombres: '', correo: '', red: '', linkReferido: '', oficinaVirtual: '' });
+  const [formData, setFormData] = useState({ usuario: '', nombres: '', correo: '', red: '', hashPago: '', linkReferido: '', tradingGcrm: '' });
   const [selectedNetwork, setSelectedNetwork] = useState('');
   const [selectedLicencia, setSelectedLicencia] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -831,6 +838,16 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
                 <p className="text-[#848E9C] text-sm">Selecciona tu licencia ejecutiva y completa el registro para acceder a comisiones del 5%.</p>
               </div>
               <form onSubmit={handleSubmit} className="glass-card rounded-2xl p-6 md:p-8 space-y-6">
+                {/* Usuario */}
+                <div className="space-y-2">
+                  <Label htmlFor="usuario" className="text-[#EAECEF] text-sm font-medium flex items-center gap-2">
+                    <User className="w-4 h-4 text-[#F0B90B]" />
+                    Usuario
+                  </Label>
+                  <Input id="usuario" type="text" placeholder="Ingresa tu nombre de usuario" value={formData.usuario} onChange={(e) => setFormData((p) => ({ ...p, usuario: e.target.value }))}
+                    className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm" />
+                </div>
+                {/* Nombres */}
                 <div className="space-y-2">
                   <Label htmlFor="nombres" className="text-[#EAECEF] text-sm font-medium">Nombres Completos <span className="text-red-400">*</span></Label>
                   <Input id="nombres" type="text" placeholder="Ingresa tu nombre completo" value={formData.nombres} onChange={(e) => setFormData((p) => ({ ...p, nombres: e.target.value }))}
@@ -865,17 +882,51 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
                     </div>
                   )}
                 </div>
+                {/* Hash Pago */}
+                <div className="space-y-2">
+                  <Label htmlFor="hashPago" className="text-[#EAECEF] text-sm font-medium flex items-center gap-2">
+                    <Hash className="w-4 h-4 text-[#F0B90B]" />
+                    Hash Pago
+                  </Label>
+                  <Input id="hashPago" type="text" placeholder="Ingresa el hash de tu pago USDT" value={formData.hashPago} onChange={(e) => setFormData((p) => ({ ...p, hashPago: e.target.value }))}
+                    className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm font-mono" />
+                  <p className="text-[#5E6673] text-xs">Pega aquí el hash de transacción de tu depósito USDT.</p>
+                </div>
+                {/* Link Referido */}
                 <div className="space-y-2">
                   <Label htmlFor="linkReferido" className="text-[#EAECEF] text-sm font-medium">Link Referido</Label>
                   <Input id="linkReferido" type="text" placeholder="https://tu-link-referido.com" value={formData.linkReferido} onChange={(e) => setFormData((p) => ({ ...p, linkReferido: e.target.value }))}
                     className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm" />
                 </div>
+                {/* TRADING GCRM */}
                 <div className="space-y-2">
-                  <Label htmlFor="oficinaVirtual" className="text-[#EAECEF] text-sm font-medium">
-                    <span className="flex items-center gap-2"><Globe className="w-4 h-4 text-[#F0B90B]" />Oficina Virtual</span>
+                  <Label className="text-[#EAECEF] text-sm font-medium flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4 text-[#F0B90B]" />
+                    TRADING GCRM
                   </Label>
-                  <Input id="oficinaVirtual" type="text" placeholder="URL de tu oficina virtual" value={formData.oficinaVirtual} onChange={(e) => setFormData((p) => ({ ...p, oficinaVirtual: e.target.value }))}
-                    className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm" />
+                  <Select value={formData.tradingGcrm} onValueChange={(val) => setFormData((p) => ({ ...p, tradingGcrm: val }))}>
+                    <SelectTrigger className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] rounded-xl h-12 text-sm">
+                      <SelectValue placeholder="Selecciona tu paquete de Trading" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1E2329] border-[#2B3139]">
+                      {TRADING_GCRM_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.id} value={opt.id} className="text-[#EAECEF] focus:bg-[#2B3139] focus:text-[#F0B90B]">
+                          <span className="flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4 text-[#0ECB81]" />
+                            {opt.label}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {formData.tradingGcrm && (
+                    <div className="flex items-center gap-2 p-3 bg-[#0B0E11] rounded-lg border border-[#0ECB81]/20">
+                      <TrendingUp className="w-4 h-4 text-[#0ECB81] shrink-0" />
+                      <p className="text-xs text-[#848E9C]">
+                        Paquete seleccionado: <span className="text-[#0ECB81] font-semibold">{TRADING_GCRM_OPTIONS.find(o => o.id === formData.tradingGcrm)?.label}</span>
+                      </p>
+                    </div>
+                  )}
                 </div>
                 {/* Licencia Ejecutiva */}
                 <div className="space-y-2">

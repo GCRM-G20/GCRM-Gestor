@@ -1,0 +1,467 @@
+   560→          <div className="glass-card rounded-2xl p-5 mb-8 flex flex-col sm:flex-row items-center gap-4 border-[#F0B90B]/30">
+   561→            <div className="w-14 h-14 rounded-2xl bg-[#F0B90B]/10 flex items-center justify-center shrink-0">
+   562→              <Gift className="w-7 h-7 text-[#F0B90B]" />
+   563→            </div>
+   564→            <div className="flex-1 text-center sm:text-left">
+   565→              <h3 className="text-[#F0B90B] font-bold text-base">Tu tasa de comisión: 5%</h3>
+   566→              <p className="text-[#848E9C] text-sm">Por cada referido que deposite, ganas el 5% de su depósito automáticamente.</p>
+   567→            </div>
+   568→            <Badge className="bg-[#F0B90B]/10 text-[#F0B90B] border-[#F0B90B]/20 text-sm px-3 py-1 rounded-lg">ACTIVA</Badge>
+   569→          </div>
+   570→
+   571→          {/* Referrals Table */}
+   572→          <div className="glass-card rounded-2xl overflow-hidden">
+   573→            <div className="p-5 border-b border-[#2B3139] flex items-center gap-3">
+   574→              <LayoutDashboard className="w-5 h-5 text-[#F0B90B]" />
+   575→              <h2 className="text-lg font-bold text-[#EAECEF]">Historial de Referidos</h2>
+   576→              <Badge variant="secondary" className="bg-[#2B3139] text-[#848E9C] text-xs">
+   577→                {referrals.length} registros
+   578→              </Badge>
+   579→            </div>
+   580→
+   581→            {/* Desktop Table */}
+   582→            <div className="hidden md:block overflow-x-auto">
+   583→              <table className="w-full text-sm">
+   584→                <thead>
+   585→                  <tr className="border-b border-[#2B3139]">
+   586→                    <th className="text-left px-5 py-3 text-[#848E9C] font-medium">Referido</th>
+   587→                    <th className="text-left px-5 py-3 text-[#848E9C] font-medium">Red</th>
+   588→                    <th className="text-right px-5 py-3 text-[#848E9C] font-medium">Depósito</th>
+   589→                    <th className="text-right px-5 py-3 text-[#848E9C] font-medium">Comisión (5%)</th>
+   590→                    <th className="text-center px-5 py-3 text-[#848E9C] font-medium">Estado</th>
+   591→                    <th className="text-right px-5 py-3 text-[#848E9C] font-medium">Fecha</th>
+   592→                  </tr>
+   593→                </thead>
+   594→                <tbody>
+   595→                  {referrals.length === 0 ? (
+   596→                    <tr><td colSpan={6} className="text-center py-12 text-[#848E9C]">No tienes referidos aún. Comparte tu enlace.</td></tr>
+   597→                  ) : (
+   598→                    referrals.map((ref) => {
+   599→                      const sc = statusConfig[ref.status] || statusConfig.pending;
+   600→                      const StatusIcon = sc.icon;
+   601→                      return (
+   602→                        <tr key={ref.id} className="border-b border-[#2B3139]/50 hover:bg-[#2B3139]/30 transition-colors">
+   603→                          <td className="px-5 py-4">
+   604→                            <div>
+   605→                              <p className="text-[#EAECEF] font-medium">{ref.referredName}</p>
+   606→                              <p className="text-[#848E9C] text-xs">{ref.referredEmail}</p>
+   607→                            </div>
+   608→                          </td>
+   609→                          <td className="px-5 py-4 text-[#848E9C]">{ref.depositNetwork || '-'}</td>
+   610→                          <td className="px-5 py-4 text-right text-[#EAECEF] font-medium">${(ref.depositAmount || 0).toFixed(2)}</td>
+   611→                          <td className="px-5 py-4 text-right text-[#0ECB81] font-semibold">${ref.commission.toFixed(2)}</td>
+   612→                          <td className="px-5 py-4 text-center">
+   613→                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${sc.bg} ${sc.color}`}>
+   614→                              <StatusIcon className="w-3.5 h-3.5" />
+   615→                              {sc.label}
+   616→                            </span>
+   617→                          </td>
+   618→                          <td className="px-5 py-4 text-right text-[#848E9C]">{formatDate(ref.createdAt)}</td>
+   619→                        </tr>
+   620→                      );
+   621→                    })
+   622→                  )}
+   623→                </tbody>
+   624→              </table>
+   625→            </div>
+   626→
+   627→            {/* Mobile Cards */}
+   628→            <div className="md:hidden p-4 space-y-3">
+   629→              {referrals.length === 0 ? (
+   630→                <p className="text-center py-8 text-[#848E9C]">No tienes referidos aún.</p>
+   631→              ) : (
+   632→                referrals.map((ref) => {
+   633→                  const sc = statusConfig[ref.status] || statusConfig.pending;
+   634→                  const StatusIcon = sc.icon;
+   635→                  return (
+   636→                    <div key={ref.id} className="bg-[#0B0E11] rounded-xl p-4">
+   637→                      <div className="flex items-center justify-between mb-3">
+   638→                        <div>
+   639→                          <p className="text-[#EAECEF] font-medium text-sm">{ref.referredName}</p>
+   640→                          <p className="text-[#848E9C] text-xs">{ref.referredEmail}</p>
+   641→                        </div>
+   642→                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${sc.bg} ${sc.color}`}>
+   643→                          <StatusIcon className="w-3 h-3" /> {sc.label}
+   644→                        </span>
+   645→                      </div>
+   646→                      <div className="grid grid-cols-3 gap-2 text-center">
+   647→                        <div>
+   648→                          <p className="text-[#848E9C] text-[10px]">Red</p>
+   649→                          <p className="text-[#EAECEF] text-xs font-medium">{ref.depositNetwork || '-'}</p>
+   650→                        </div>
+   651→                        <div>
+   652→                          <p className="text-[#848E9C] text-[10px]">Depósito</p>
+   653→                          <p className="text-[#EAECEF] text-xs font-medium">${(ref.depositAmount || 0).toFixed(2)}</p>
+   654→                        </div>
+   655→                        <div>
+   656→                          <p className="text-[#848E9C] text-[10px]">Comisión</p>
+   657→                          <p className="text-[#0ECB81] text-xs font-bold">${ref.commission.toFixed(2)}</p>
+   658→                        </div>
+   659→                      </div>
+   660→                      <p className="text-[#848E9C] text-[10px] mt-2 text-right">{formatDate(ref.createdAt)}</p>
+   661→                    </div>
+   662→                  );
+   663→                })
+   664→              )}
+   665→            </div>
+   666→          </div>
+   667→        </div>
+   668→      </main>
+   669→
+   670→      {/* Footer */}
+   671→      <footer className="bg-[#0B0E11] border-t border-[#2B3139] mt-auto">
+   672→        <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
+   673→          <div className="flex items-center justify-between gap-4">
+   674→            <span className="text-xs text-[#848E9C]">© 2025 GCRM Exchange. Todos los derechos reservados.</span>
+   675→            <div className="flex items-center gap-4 text-xs text-[#848E9C]">
+   676→              <a href="#" className="hover:text-[#F0B90B] transition-colors">Términos</a>
+   677→              <a href="#" className="hover:text-[#F0B90B] transition-colors">Privacidad</a>
+   678→              <a href="#" className="hover:text-[#F0B90B] transition-colors">Soporte</a>
+   679→            </div>
+   680→          </div>
+   681→        </div>
+   682→      </footer>
+   683→    </div>
+   684→  );
+   685→}
+   686→
+   687→/* ─── STAT CARD ─── */
+   688→
+   689→function StatCard({ icon: Icon, title, value, subtitle, color }: {
+   690→  icon: typeof DollarSign; title: string; value: string; subtitle: string; color: string;
+   691→}) {
+   692→  return (
+   693→    <div className="glass-card rounded-2xl p-5">
+   694→      <div className="flex items-center gap-3 mb-3">
+   695→        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${color}15` }}>
+   696→          <Icon className="w-5 h-5" style={{ color }} />
+   697→        </div>
+   698→        <span className="text-[#848E9C] text-xs font-medium uppercase tracking-wider">{title}</span>
+   699→      </div>
+   700→      <p className="text-2xl font-bold text-[#EAECEF] mb-1">{value}</p>
+   701→      <p className="text-[#848E9C] text-xs">{subtitle}</p>
+   702→    </div>
+   703→  );
+   704→}
+   705→
+   706→/* ─── LANDING PAGE ─── */
+   707→
+   708→function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister: () => void }) {
+   709→  const [formData, setFormData] = useState({ nombres: '', correo: '', red: '', linkReferido: '', oficinaVirtual: '' });
+   710→  const [selectedNetwork, setSelectedNetwork] = useState('');
+   711→  const [selectedLicencia, setSelectedLicencia] = useState('');
+   712→  const [isSubmitting, setIsSubmitting] = useState(false);
+   713→  const { toast } = useToast();
+   714→
+   715→  const selectedNet = USDT_NETWORKS.find((n) => n.id === selectedNetwork);
+   716→
+   717→  const handleSubmit = async (e: React.FormEvent) => {
+   718→    e.preventDefault();
+   719→    if (!formData.nombres.trim()) {
+   720→      toast({ title: 'Campo requerido', description: 'Por favor ingresa tu nombre completo.', variant: 'destructive' });
+   721→      return;
+   722→    }
+   723→    if (!formData.correo.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.correo)) {
+   724→      toast({ title: 'Correo inválido', description: 'Por favor ingresa un correo electrónico válido.', variant: 'destructive' });
+   725→      return;
+   726→    }
+   727→    setIsSubmitting(true);
+   728→    await new Promise((r) => setTimeout(r, 1500));
+   729→    setIsSubmitting(false);
+   730→    toast({ title: 'Solicitud enviada', description: 'Por favor inicia sesión para ver tus comisiones.' });
+   731→    onRegister();
+   732→  };
+   733→
+   734→  return (
+   735→    <div className="min-h-screen bg-[#0B0E11] flex flex-col">
+   736→      {/* Navbar */}
+   737→      <header className="sticky top-0 z-50 bg-[#0B0E11]/95 backdrop-blur-md border-b border-[#2B3139]">
+   738→        <nav className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
+   739→          <div className="flex items-center gap-3">
+   740→            <img src="/assets/gcrm-logo.png" alt="GCRM Logo" className="w-8 h-8 rounded-full" />
+   741→            <span className="text-xl font-bold text-gold-gradient">GCRM Exchange</span>
+   742→          </div>
+   743→          <div className="hidden md:flex items-center gap-6 text-sm text-[#848E9C]">
+   744→            <a href="#form" className="hover:text-[#F0B90B] transition-colors">Registro</a>
+   745→            <a href="#deposit" className="hover:text-[#F0B90B] transition-colors">Depositar</a>
+   746→            <a href="#exchanges" className="hover:text-[#F0B90B] transition-colors">Exchanges</a>
+   747→            <a href="#hotcoin" className="hover:text-[#F0B90B] transition-colors">Hotcoin</a>
+   748→          </div>
+   749→          <div className="flex items-center gap-2">
+   750→            <Button onClick={onLogin} variant="outline" className="border-[#2B3139] text-[#EAECEF] hover:bg-[#1E2329] rounded-lg text-sm gap-2">
+   751→              <LogIn className="w-4 h-4" />
+   752→              <span className="hidden sm:inline">Ingresar</span>
+   753→            </Button>
+   754→          </div>
+   755→        </nav>
+   756→      </header>
+   757→
+   758→      <main className="flex-1">
+   759→        {/* Hero */}
+   760→        <section className="relative overflow-hidden">
+   761→          <div className="absolute inset-0">
+   762→            <img src="/assets/banner.png" alt="GCRM Banner" className="w-full h-full object-cover opacity-30" />
+   763→            <div className="absolute inset-0 bg-gradient-to-b from-[#0B0E11]/60 via-[#0B0E11]/80 to-[#0B0E11]" />
+   764→          </div>
+   765→          <div className="relative max-w-7xl mx-auto px-4 md:px-6 py-16 md:py-24 lg:py-32">
+   766→            <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+   767→              <div className="flex-1 text-center lg:text-left animate-fade-in-up">
+   768→                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#F0B90B]/10 border border-[#F0B90B]/20 mb-6">
+   769→                  <div className="w-2 h-2 rounded-full bg-[#0ECB81] animate-pulse" />
+   770→                  <span className="text-[#F0B90B] text-xs font-medium">Listado en múltiples exchanges</span>
+   771→                </div>
+   772→                <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-6">
+   773→                  <span className="text-[#EAECEF]">MIEMBROS EJECUTIVOS</span><br />
+   774→                  <span className="text-gold-gradient">GCRM Exchange</span>
+   775→                </h1>
+   776→                <p className="text-[#848E9C] text-base md:text-lg leading-relaxed mb-8 max-w-lg mx-auto lg:mx-0">
+   777→                  Registro oficial de Miembros Ejecutivos. Licencias desde <span className="text-[#F0B90B] font-semibold">$150</span>.
+   778→                  Recibe comisión del <span className="text-[#F0B90B] font-semibold">5%</span> por cada registro referido.
+   779→                </p>
+   780→                <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
+   781→                  <Button onClick={() => { toast({ title: 'Airdrop GCRM', description: 'Conectando al Airdrop... Se redirigirá a la plataforma de Airdrop.' }); }} size="lg"
+   782→                    className="w-full sm:w-auto bg-gradient-to-r from-[#F0B90B] to-[#F8D12F] hover:from-[#F8D12F] hover:to-[#F0B90B] text-[#0B0E11] font-bold rounded-xl px-8 py-6 text-base gap-2 transition-all hover:shadow-lg hover:shadow-[#F0B90B]/20">
+   783→                    <Plane className="w-5 h-5" />
+   784→                    Airdrop GCRM
+   785→                  </Button>
+   786→                  <Button onClick={onRegister} size="lg"
+   787→                    className="w-full sm:w-auto bg-[#F0B90B] hover:bg-[#F8D12F] text-[#0B0E11] font-bold rounded-xl px-8 py-6 text-base animate-pulse-gold">
+   788→                    Registro Ejecutivo <ArrowRight className="w-5 h-5 ml-2" />
+   789→                  </Button>
+   790→                </div>
+   791→              </div>
+   792→              <div className="shrink-0 animate-float">
+   793→                <div className="relative">
+   794→                  <img src="/assets/gcrm-coin.png" alt="GCRM Coin" className="w-48 h-48 md:w-64 md:h-64 lg:w-72 lg:h-72 object-contain drop-shadow-2xl" />
+   795→                  <div className="absolute inset-0 rounded-full bg-[#F0B90B]/10 blur-3xl -z-10 scale-150" />
+   796→                </div>
+   797→              </div>
+   798→            </div>
+   799→          </div>
+   800→        </section>
+   801→
+   802→        {/* Features */}
+   803→        <section className="py-16 md:py-20 bg-[#0B0E11]">
+   804→          <div className="max-w-7xl mx-auto px-4 md:px-6">
+   805→            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+   806→              {FEATURES.map((f, i) => (
+   807→                <div key={f.title} className="glass-card rounded-2xl p-6 hover:border-[#F0B90B]/30 transition-all duration-300 group">
+   808→                  <div className="w-12 h-12 rounded-xl bg-[#F0B90B]/10 flex items-center justify-center mb-4 group-hover:bg-[#F0B90B]/20 transition-colors">
+   809→                    <f.icon className="w-6 h-6 text-[#F0B90B]" />
+   810→                  </div>
+   811→                  <h3 className="text-[#EAECEF] font-bold text-base mb-2">{f.title}</h3>
+   812→                  <p className="text-[#848E9C] text-sm leading-relaxed">{f.desc}</p>
+   813→                </div>
+   814→              ))}
+   815→            </div>
+   816→          </div>
+   817→        </section>
+   818→
+   819→        {/* Registration Form */}
+   820→        <section id="form" className="py-16 md:py-20 bg-[#0B0E11]">
+   821→          <div className="max-w-7xl mx-auto px-4 md:px-6">
+   822→            <div className="max-w-2xl mx-auto">
+   823→              <div className="text-center mb-10">
+   824→                <div className="inline-flex items-center gap-2 mb-4">
+   825→                  <Wallet className="w-5 h-5 text-[#F0B90B]" />
+   826→                  <span className="text-[#F0B90B] text-sm font-medium uppercase tracking-wider">Formulario de Registro</span>
+   827→                </div>
+   828→                <h2 className="text-2xl md:text-3xl font-bold text-[#EAECEF] mb-3">
+   829→                  Registro Miembros Ejecutivos <span className="text-gold-gradient">GCRM</span>
+   830→                </h2>
+   831→                <p className="text-[#848E9C] text-sm">Selecciona tu licencia ejecutiva y completa el registro para acceder a comisiones del 5%.</p>
+   832→              </div>
+   833→              <form onSubmit={handleSubmit} className="glass-card rounded-2xl p-6 md:p-8 space-y-6">
+   834→                <div className="space-y-2">
+   835→                  <Label htmlFor="nombres" className="text-[#EAECEF] text-sm font-medium">Nombres Completos <span className="text-red-400">*</span></Label>
+   836→                  <Input id="nombres" type="text" placeholder="Ingresa tu nombre completo" value={formData.nombres} onChange={(e) => setFormData((p) => ({ ...p, nombres: e.target.value }))}
+   837→                    className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm" />
+   838→                </div>
+   839→                <div className="space-y-2">
+   840→                  <Label htmlFor="correo" className="text-[#EAECEF] text-sm font-medium">Correo Electrónico <span className="text-red-400">*</span></Label>
+   841→                  <Input id="correo" type="email" placeholder="tucorreo@ejemplo.com" value={formData.correo} onChange={(e) => setFormData((p) => ({ ...p, correo: e.target.value }))}
+   842→                    className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm" />
+   843→                </div>
+   844→                <div id="deposit" className="space-y-2">
+   845→                  <Label className="text-[#EAECEF] text-sm font-medium">Depósito USDT - Selecciona Red</Label>
+   846→                  <Select value={selectedNetwork} onValueChange={setSelectedNetwork}>
+   847→                    <SelectTrigger className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] rounded-xl h-12 text-sm">
+   848→                      <SelectValue placeholder="Selecciona la red de depósito" />
+   849→                    </SelectTrigger>
+   850→                    <SelectContent className="bg-[#1E2329] border-[#2B3139]">
+   851→                      {USDT_NETWORKS.map((net) => (
+   852→                        <SelectItem key={net.id} value={net.id} className="text-[#EAECEF] focus:bg-[#2B3139] focus:text-[#F0B90B]">
+   853→                          <span className="flex items-center gap-2"><span>{net.icon}</span><span>{net.label}</span></span>
+   854→                        </SelectItem>
+   855→                      ))}
+   856→                    </SelectContent>
+   857→                  </Select>
+   858→                  {selectedNet && (
+   859→                    <div className="mt-3 p-4 bg-[#0B0E11] rounded-xl border border-[#2B3139]">
+   860→                      <div className="flex items-center justify-between mb-2">
+   861→                        <span className="text-[#848E9C] text-xs font-medium">{selectedNet.icon} Dirección {selectedNet.label}</span>
+   862→                        <CopyButton text={selectedNet.address} />
+   863→                      </div>
+   864→                      <p className="text-[#EAECEF] text-xs md:text-sm font-mono break-all leading-relaxed">{selectedNet.address}</p>
+   865→                    </div>
+   866→                  )}
+   867→                </div>
+   868→                <div className="space-y-2">
+   869→                  <Label htmlFor="linkReferido" className="text-[#EAECEF] text-sm font-medium">Link Referido</Label>
+   870→                  <Input id="linkReferido" type="text" placeholder="https://tu-link-referido.com" value={formData.linkReferido} onChange={(e) => setFormData((p) => ({ ...p, linkReferido: e.target.value }))}
+   871→                    className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm" />
+   872→                </div>
+   873→                <div className="space-y-2">
+   874→                  <Label htmlFor="oficinaVirtual" className="text-[#EAECEF] text-sm font-medium">
+   875→                    <span className="flex items-center gap-2"><Globe className="w-4 h-4 text-[#F0B90B]" />Oficina Virtual</span>
+   876→                  </Label>
+   877→                  <Input id="oficinaVirtual" type="text" placeholder="URL de tu oficina virtual" value={formData.oficinaVirtual} onChange={(e) => setFormData((p) => ({ ...p, oficinaVirtual: e.target.value }))}
+   878→                    className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm" />
+   879→                </div>
+   880→                {/* Licencia Ejecutiva */}
+   881→                <div className="space-y-2">
+   882→                  <Label className="text-[#EAECEF] text-sm font-medium flex items-center gap-2">
+   883→                    <Crown className="w-4 h-4 text-[#F0B90B]" />
+   884→                    Licencia Ejecutiva
+   885→                  </Label>
+   886→                  <Select value={selectedLicencia} onValueChange={setSelectedLicencia}>
+   887→                    <SelectTrigger className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] rounded-xl h-12 text-sm">
+   888→                      <SelectValue placeholder="Selecciona tu nivel de licencia" />
+   889→                    </SelectTrigger>
+   890→                    <SelectContent className="bg-[#1E2329] border-[#2B3139]">
+   891→                      {LICENCIAS.map((l) => (
+   892→                        <SelectItem key={l.id} value={l.id} className="text-[#EAECEF] focus:bg-[#2B3139] focus:text-[#F0B90B]">
+   893→                          <span className="flex items-center justify-between w-full gap-6">
+   894→                            <span className="flex items-center gap-2">
+   895→                              {l.id === 'supervisor' && <Crown className="w-4 h-4 text-[#F0B90B]" />}
+   896→                              {l.id === 'coordinador' && <Crown className="w-4 h-4 text-[#F0B90B]" />}
+   897→                              {l.id === 'promotor' && <Award className="w-4 h-4 text-[#F0B90B]" />}
+   898→                              {l.id === 'asociado' && <Star className="w-4 h-4 text-[#F0B90B]" />}
+   899→                              {l.label}
+   900→                            </span>
+   901→                            <span className="text-[#F0B90B] font-bold">{l.price}</span>
+   902→                          </span>
+   903→                        </SelectItem>
+   904→                      ))}
+   905→                    </SelectContent>
+   906→                  </Select>
+   907→                  {selectedLicencia && (
+   908→                    <div className="flex items-center gap-2 p-3 bg-[#0B0E11] rounded-lg border border-[#2B3139]">
+   909→                      <CheckCircle className="w-4 h-4 text-[#0ECB81] shrink-0" />
+   910→                      <p className="text-xs text-[#848E9C]">
+   911→                        Licencia <span className="text-[#F0B90B] font-semibold">{LICENCIAS.find(l => l.id === selectedLicencia)?.label}</span> - Inversión: <span className="text-[#EAECEF] font-semibold">{LICENCIAS.find(l => l.id === selectedLicencia)?.price} USDT</span>
+   912→                      </p>
+   913→                    </div>
+   914→                  )}
+   915→                </div>
+   916→                <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-[#F0B90B]/10 to-[#F0B90B]/5 rounded-xl border border-[#F0B90B]/20">
+   917→                  <Gift className="w-6 h-6 text-[#F0B90B] shrink-0" />
+   918→                  <div>
+   919→                    <p className="text-[#F0B90B] font-bold text-sm">Comisión 5% por Registro</p>
+   920→                    <p className="text-[#848E9C] text-xs">Gana un 5% de comisión automática por cada persona que se registre con tu enlace.</p>
+   921→                  </div>
+   922→                </div>
+   923→                <Button type="submit" disabled={isSubmitting}
+   924→                  className="w-full bg-[#F0B90B] hover:bg-[#F8D12F] text-[#0B0E11] font-bold rounded-xl h-12 text-base transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+   925→                  {isSubmitting ? (
+   926→                    <span className="flex items-center gap-2"><div className="w-4 h-4 border-2 border-[#0B0E11]/30 border-t-[#0B0E11] rounded-full animate-spin" />Procesando...</span>
+   927→                  ) : (
+   928→                    <span className="flex items-center justify-center gap-2"><Users className="w-5 h-5" />Registrarme Ahora</span>
+   929→                  )}
+   930→                </Button>
+   931→              </form>
+   932→            </div>
+   933→          </div>
+   934→        </section>
+   935→
+   936→        {/* Exchanges Carousel */}
+   937→        <section id="exchanges" className="py-16 md:py-20 bg-[#0B0E11]">
+   938→          <div className="max-w-7xl mx-auto px-4 md:px-6"><ExchangeCarousel /></div>
+   939→        </section>
+   940→
+   941→        {/* Hotcoin */}
+   942→        <section id="hotcoin" className="py-16 md:py-20 bg-[#0B0E11]">
+   943→          <div className="max-w-5xl mx-auto px-4 md:px-6"><HotcoinSection /></div>
+   944→        </section>
+   945→
+   946→        {/* Bottom CTA */}
+   947→        <section className="py-16 md:py-20 bg-[#0B0E11]">
+   948→          <div className="max-w-4xl mx-auto px-4 md:px-6 text-center">
+   949→            <h2 className="text-2xl md:text-3xl font-bold text-[#EAECEF] mb-4">
+   950→              Comienza a Ganar con <span className="text-gold-gradient">GCRM</span> Hoy
+   951→            </h2>
+   952→            <p className="text-[#848E9C] text-base mb-8 max-w-xl mx-auto">
+   953→              Únete a miles de usuarios que ya están generando ingresos con la comisión del 5% por registro.
+   954→            </p>
+   955→            <Button onClick={onRegister} size="lg" className="bg-[#F0B90B] hover:bg-[#F8D12F] text-[#0B0E11] font-bold rounded-xl px-10 py-6 text-base">
+   956→              Registrarse Ahora <ArrowRight className="w-5 h-5 ml-2" />
+   957→            </Button>
+   958→          </div>
+   959→        </section>
+   960→      </main>
+   961→
+   962→      {/* Footer */}
+   963→      <footer className="bg-[#0B0E11] border-t border-[#2B3139] mt-auto">
+   964→        <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
+   965→          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+   966→            <div className="flex items-center gap-3">
+   967→              <img src="/assets/gcrm-logo.png" alt="GCRM" className="w-6 h-6 rounded-full" />
+   968→              <span className="text-sm text-[#848E9C]">© 2025 GCRM Exchange. Todos los derechos reservados.</span>
+   969→            </div>
+   970→            <div className="flex items-center gap-6 text-xs text-[#848E9C]">
+   971→              <a href="#" className="hover:text-[#F0B90B] transition-colors">Términos</a>
+   972→              <a href="#" className="hover:text-[#F0B90B] transition-colors">Privacidad</a>
+   973→              <a href="#" className="hover:text-[#F0B90B] transition-colors">Soporte</a>
+   974→            </div>
+   975→          </div>
+   976→        </div>
+   977→      </footer>
+   978→    </div>
+   979→  );
+   980→}
+   981→
+   982→/* ─── MAIN: VIEW ROUTER ─── */
+   983→
+   984→export default function Home() {
+   985→  const [user, setUser] = useState<SessionUser | null>(null);
+   986→  const [checking, setChecking] = useState(true);
+   987→  const [showLogin, setShowLogin] = useState(false);
+   988→  const [showRegister, setShowRegister] = useState(false);
+   989→
+   990→  // Check session on mount
+   991→  useEffect(() => {
+   992→    fetch('/api/auth/me')
+   993→      .then((res) => res.json())
+   994→      .then((data) => {
+   995→        if (data.user) setUser(data.user);
+   996→      })
+   997→      .catch(() => {})
+   998→      .finally(() => setChecking(false));
+   999→  }, []);
+  1000→
+  1001→  if (checking) {
+  1002→    return (
+  1003→      <div className="min-h-screen bg-[#0B0E11] flex items-center justify-center">
+  1004→        <Loader2 className="w-8 h-8 text-[#F0B90B] animate-spin" />
+  1005→      </div>
+  1006→    );
+  1007→  }
+  1008→
+  1009→  // Logged in → Dashboard
+  1010→  if (user) {
+  1011→    return (
+  1012→      <>
+  1013→        <Dashboard user={user} onLogout={() => setUser(null)} />
+  1014→      </>
+  1015→    );
+  1016→  }
+  1017→
+  1018→  // Not logged in → Landing + Login/Register dialogs
+  1019→  return (
+  1020→    <>
+  1021→      <LandingPage onLogin={() => setShowLogin(true)} onRegister={() => setShowRegister(true)} />
+  1022→      <LoginDialog open={showLogin} onOpenChange={setShowLogin} onSwitchToRegister={() => setShowRegister(true)} />
+  1023→      <RegisterDialog open={showRegister} onOpenChange={setShowRegister} onSwitchToLogin={() => setShowLogin(true)} />
+  1024→    </>
+  1025→  );
+  1026→}
