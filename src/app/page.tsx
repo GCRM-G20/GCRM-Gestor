@@ -1061,7 +1061,8 @@ function StatCard({ icon: Icon, title, value, subtitle, color }: {
 /* ─── LANDING PAGE ─── */
 
 function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister: () => void }) {
-  const [formData, setFormData] = useState({ usuario: '', nombres: '', correo: '', red: '', hashPago: '', linkReferido: '', tradingGcrm: '' });
+  const [formData, setFormData] = useState({ usuario: '', nombres: '', correo: '', password: '', red: '', hashPago: '', linkReferido: '', tradingGcrm: '' });
+  const [showPassword, setShowPassword] = useState(false);
   const [selectedNetwork, setSelectedNetwork] = useState('');
   const [selectedLicencia, setSelectedLicencia] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -1077,6 +1078,10 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
     }
     if (!formData.correo.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.correo)) {
       toast({ title: 'Correo inválido', description: 'Por favor ingresa un correo electrónico válido.', variant: 'destructive' });
+      return;
+    }
+    if (!formData.password || formData.password.length < 6) {
+      toast({ title: 'Contraseña requerida', description: 'La contraseña debe tener al menos 6 caracteres.', variant: 'destructive' });
       return;
     }
     setIsSubmitting(true);
@@ -1204,6 +1209,17 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
                   <Label htmlFor="correo" className="text-[#EAECEF] text-sm font-medium">Correo Electrónico <span className="text-red-400">*</span></Label>
                   <Input id="correo" type="email" placeholder="tucorreo@ejemplo.com" value={formData.correo} onChange={(e) => setFormData((p) => ({ ...p, correo: e.target.value }))}
                     className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm" />
+                </div>
+                {/* Contraseña */}
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-[#EAECEF] text-sm font-medium">Contraseña <span className="text-red-400">*</span></Label>
+                  <div className="relative">
+                    <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="Mínimo 6 caracteres" value={formData.password} onChange={(e) => setFormData((p) => ({ ...p, password: e.target.value }))}
+                      className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm pr-10" />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#848E9C] hover:text-[#EAECEF] transition-colors">
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
                 <div id="deposit" className="space-y-2">
                   <Label className="text-[#EAECEF] text-sm font-medium">Depósito USDT - Selecciona Red</Label>
