@@ -140,6 +140,93 @@ function ExchangeLogo({ name, color, initial }: { name: string; color: string; i
   );
 }
 
+/* ─── PARTICLE BACKGROUND ─── */
+
+function ParticleBackground() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    let animId: number;
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const PARTICLE_COUNT = 80;
+    const CONNECTION_DIST = 150;
+    const particles: { x: number; y: number; vx: number; vy: number; r: number; o: number }[] = [];
+
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        r: Math.random() * 1.5 + 0.5,
+        o: Math.random() * 0.5 + 0.2,
+      });
+    }
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Update & draw particles
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(240, 185, 11, ${p.o})`;
+        ctx.fill();
+      }
+
+      // Draw connections
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < CONNECTION_DIST) {
+            const alpha = (1 - dist / CONNECTION_DIST) * 0.15;
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(240, 185, 11, ${alpha})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
+
+      animId = requestAnimationFrame(draw);
+    };
+    draw();
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener('resize', resize);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 w-full h-full pointer-events-none"
+      style={{ zIndex: 1 }}
+    />
+  );
+}
+
 /* ─── EXCHANGE CAROUSEL ─── */
 
 function ExchangeCarousel() {
@@ -768,12 +855,12 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
 
       <main className="flex-1">
         {/* Hero */}
-        <section className="relative overflow-hidden">
-          <div className="absolute inset-0">
-            <img src="/assets/banner.png" alt="GCRM Banner" className="w-full h-full object-cover opacity-30" />
-            <div className="absolute inset-0 bg-gradient-to-b from-[#0B0E11]/60 via-[#0B0E11]/80 to-[#0B0E11]" />
-          </div>
-          <div className="relative max-w-7xl mx-auto px-4 md:px-6 py-16 md:py-24 lg:py-32">
+        <section className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0a0d12 0%, #0f1923 30%, #0B0E11 60%, #0d1117 100%)' }}>
+          {/* Animated particle network */}
+          <ParticleBackground />
+          {/* Subtle radial glow */}
+          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 70% 40%, rgba(240, 185, 11, 0.06) 0%, transparent 60%), radial-gradient(ellipse at 20% 80%, rgba(14, 203, 129, 0.04) 0%, transparent 50%)' }} />
+          <div className="relative max-w-7xl mx-auto px-4 md:px-6 py-16 md:py-24 lg:py-32" style={{ zIndex: 2 }}>
             <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
               <div className="flex-1 text-center lg:text-left animate-fade-in-up">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#F0B90B]/10 border border-[#F0B90B]/20 mb-6">
@@ -802,17 +889,7 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
               </div>
               <div className="shrink-0 animate-coin-container">
                 <div className="relative">
-                  {/* Orbit ring */}
-                  <div className="absolute inset-[-20px] rounded-full border border-[#F0B90B]/20 animate-orbit-ring" />
-                  <div className="absolute inset-[-40px] rounded-full border border-dashed border-[#F0B90B]/10 animate-orbit-ring" style={{ animationDirection: 'reverse', animationDuration: '15s' }} />
-                  {/* Glow background */}
-                  <div className="absolute inset-0 bg-[#F0B90B]/10 blur-3xl scale-150 animate-coin-glow" />
-                  {/* Coin image */}
                   <img src="/assets/gcrm-coin.png" alt="GCRM Coin" className="w-48 h-48 md:w-64 md:h-64 lg:w-72 lg:h-72 object-contain animate-coin-glow relative z-10" />
-                  {/* Sparkle dots */}
-                  <div className="absolute top-2 right-4 w-2 h-2 rounded-full bg-[#F0B90B] animate-pulse" />
-                  <div className="absolute bottom-6 left-2 w-1.5 h-1.5 rounded-full bg-[#F8D12F] animate-pulse" style={{ animationDelay: '0.5s' }} />
-                  <div className="absolute top-1/2 -right-3 w-1 h-1 rounded-full bg-[#0ECB81] animate-pulse" style={{ animationDelay: '1s' }} />
                 </div>
               </div>
             </div>
