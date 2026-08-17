@@ -20,22 +20,35 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+*.log
 
 # env files
+.env
 .env*.local
 
-# prisma
+# database
+db/*.db
 db/*.db-journal
 
 # IDE
 .vscode/
 .idea/
 
-# temp
+# temp & internal
 scripts/
 tool-results/
 tmp/
-*.log
+skills/
+upload/
+download/
+examples/
+mini-services/
+tests/
+.zscripts/
+Caddyfile
+template-ref.json
+bun.lock
+worklog.md
 
 # vercel
 .vercel
@@ -43,5 +56,3 @@ tmp/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-skills/
-tool-results/
