@@ -38,16 +38,16 @@ interface SessionUser {
 }
 
 const LICENCIAS = [
-  { id: 'promotor', label: 'Promotor', price: '$150', value: 150 },
-  { id: 'coordinador', label: 'Coordinador', price: '$300', value: 300 },
-  { id: 'senior', label: 'Senior', price: '$500', value: 500 },
+  { id: 'asociado', label: 'Asociado', price: '$150', value: 150 },
+  { id: 'promotor', label: 'Promotor', price: '$300', value: 300 },
+  { id: 'coordinador', label: 'Coordinador', price: '$500', value: 500 },
   { id: 'supervisor', label: 'Supervisor', price: '$1,000', value: 1000 },
 ];
 
 const LICENCIA_ICONS: Record<string, typeof Crown> = {
-  promotor: Star,
-  coordinador: Award,
-  senior: Crown,
+  asociado: Star,
+  promotor: Award,
+  coordinador: Crown,
   supervisor: Crown,
 };
 
@@ -893,9 +893,9 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
                           <span className="flex items-center justify-between w-full gap-6">
                             <span className="flex items-center gap-2">
                               {l.id === 'supervisor' && <Crown className="w-4 h-4 text-[#F0B90B]" />}
-                              {l.id === 'senior' && <Award className="w-4 h-4 text-[#F0B90B]" />}
-                              {l.id === 'coordinador' && <Star className="w-4 h-4 text-[#F0B90B]" />}
-                              {l.id === 'promotor' && <Star className="w-3 h-3 text-[#F0B90B]" />}
+                              {l.id === 'coordinador' && <Crown className="w-4 h-4 text-[#F0B90B]" />}
+                              {l.id === 'promotor' && <Award className="w-4 h-4 text-[#F0B90B]" />}
+                              {l.id === 'asociado' && <Star className="w-4 h-4 text-[#F0B90B]" />}
                               {l.label}
                             </span>
                             <span className="text-[#F0B90B] font-bold">{l.price}</span>
