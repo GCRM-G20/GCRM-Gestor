@@ -892,10 +892,10 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
                     className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm font-mono" />
                   <p className="text-[#5E6673] text-xs">Pega aquí el hash de transacción de tu depósito USDT.</p>
                 </div>
-                {/* Link Referido */}
+                {/* Codigo Usuario */}
                 <div className="space-y-2">
-                  <Label htmlFor="linkReferido" className="text-[#EAECEF] text-sm font-medium">Link Referido</Label>
-                  <Input id="linkReferido" type="text" placeholder="https://tu-link-referido.com" value={formData.linkReferido} onChange={(e) => setFormData((p) => ({ ...p, linkReferido: e.target.value }))}
+                  <Label htmlFor="codigoUsuario" className="text-[#EAECEF] text-sm font-medium">Codigo Usuario</Label>
+                  <Input id="codigoUsuario" type="text" placeholder="Ingresa tu codigo de usuario" value={formData.linkReferido} onChange={(e) => setFormData((p) => ({ ...p, linkReferido: e.target.value }))}
                     className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm" />
                 </div>
                 {/* TRADING GCRM */}
