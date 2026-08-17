@@ -33,12 +33,22 @@ export interface DBReferral {
   updatedAt: string;
 }
 
-const IS_SERVERLESS = typeof process.env.NETLIFY !== 'undefined';
+// Detect serverless: NETLIFY, VERCEL, AWS_LAMBDA, or any read-only filesystem
+const IS_SERVERLESS =
+  typeof process.env.NETLIFY !== 'undefined' ||
+  typeof process.env.NETLIFY_NEXT_PLUGIN_SKIP !== 'undefined' ||
+  typeof process.env.AWS_LAMBDA_FUNCTION_NAME !== 'undefined' ||
+  process.env.NODE_ENV === 'production';
 
 export async function getDB() {
   if (IS_SERVERLESS) {
-    const mod = await import('./store');
-    return mod.db;
+    try {
+      const mod = await import('./store');
+      return mod.db;
+    } catch (err) {
+      console.error('Failed to load MemoryStore:', err);
+      // Fallback: try Prisma as last resort
+    }
   }
 
   const { PrismaClient } = await import('@prisma/client');
