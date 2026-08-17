@@ -1056,17 +1056,45 @@ function StatCard({ icon: Icon, title, value, subtitle, color }: {
   );
 }
 
+/* ─── DEPOSIT INFO (standalone) ─── */
+
+function DepositInfo() {
+  const [selectedNetwork, setSelectedNetwork] = useState('');
+  const selectedNet = USDT_NETWORKS.find((n) => n.id === selectedNetwork);
+  return (
+    <div className="glass-card rounded-2xl p-6 md:p-8 space-y-4">
+      <Select value={selectedNetwork} onValueChange={setSelectedNetwork}>
+        <SelectTrigger className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] rounded-xl h-12 text-sm">
+          <SelectValue placeholder="Selecciona la red de depósito" />
+        </SelectTrigger>
+        <SelectContent className="bg-[#1E2329] border-[#2B3139]">
+          {USDT_NETWORKS.map((net) => (
+            <SelectItem key={net.id} value={net.id} className="text-[#EAECEF] focus:bg-[#2B3139] focus:text-[#F0B90B]">
+              <span className="flex items-center gap-2"><span>{net.icon}</span><span>{net.label}</span></span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {selectedNet && (
+        <div className="p-4 bg-[#0B0E11] rounded-xl border border-[#2B3139]">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[#848E9C] text-xs font-medium">{selectedNet.icon} Dirección {selectedNet.label}</span>
+            <CopyButton text={selectedNet.address} />
+          </div>
+          <p className="text-[#EAECEF] text-xs md:text-sm font-mono break-all leading-relaxed">{selectedNet.address}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── LANDING PAGE ─── */
 
 function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister: () => void }) {
-  const [formData, setFormData] = useState({ usuario: '', nombres: '', correo: '', password: '', red: '', hashPago: '', linkReferido: '', tradingGcrm: '' });
+  const [formData, setFormData] = useState({ nombres: '', correo: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedNetwork, setSelectedNetwork] = useState('');
-  const [selectedLicencia, setSelectedLicencia] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-
-  const selectedNet = USDT_NETWORKS.find((n) => n.id === selectedNetwork);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1079,14 +1107,27 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
       return;
     }
     if (!formData.password || formData.password.length < 6) {
-      toast({ title: 'Contraseña requerida', description: 'La contraseña debe tener al menos 6 caracteres.', variant: 'destructive' });
+      toast({ title: 'Contraseña corta', description: 'Mínimo 6 caracteres.', variant: 'destructive' });
       return;
     }
     setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 1500));
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: formData.nombres, email: formData.correo, password: formData.password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast({ title: 'Error', description: data.error, variant: 'destructive' });
+      } else {
+        toast({ title: 'Registro exitoso', description: `Bienvenido/a ${data.user.name}.` });
+        window.location.reload();
+      }
+    } catch {
+      toast({ title: 'Error', description: 'No se pudo conectar al servidor.', variant: 'destructive' });
+    }
     setIsSubmitting(false);
-    toast({ title: 'Solicitud enviada', description: 'Por favor inicia sesión para ver tus comisiones.' });
-    onRegister();
   };
 
   return (
@@ -1186,22 +1227,14 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
                 </h2>
                 <p className="text-[#848E9C] text-sm">Selecciona tu licencia ejecutiva y completa el registro para acceder a comisiones del 5%.</p>
               </div>
-              <form onSubmit={handleSubmit} className="glass-card rounded-2xl p-6 md:p-8 space-y-6">
-                {/* Usuario */}
+              <form onSubmit={handleSubmit} className="glass-card rounded-2xl p-6 md:p-8 space-y-5">
+                {/* Nombre */}
                 <div className="space-y-2">
-                  <Label htmlFor="usuario" className="text-[#EAECEF] text-sm font-medium flex items-center gap-2">
-                    <User className="w-4 h-4 text-[#F0B90B]" />
-                    Usuario
-                  </Label>
-                  <Input id="usuario" type="text" placeholder="Ingresa tu nombre de usuario" value={formData.usuario} onChange={(e) => setFormData((p) => ({ ...p, usuario: e.target.value }))}
+                  <Label htmlFor="nombres" className="text-[#EAECEF] text-sm font-medium">Nombre Completo <span className="text-red-400">*</span></Label>
+                  <Input id="nombres" type="text" placeholder="Tu nombre" value={formData.nombres} onChange={(e) => setFormData((p) => ({ ...p, nombres: e.target.value }))}
                     className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm" />
                 </div>
-                {/* Nombres */}
-                <div className="space-y-2">
-                  <Label htmlFor="nombres" className="text-[#EAECEF] text-sm font-medium">Nombres Completos <span className="text-red-400">*</span></Label>
-                  <Input id="nombres" type="text" placeholder="Ingresa tu nombre completo" value={formData.nombres} onChange={(e) => setFormData((p) => ({ ...p, nombres: e.target.value }))}
-                    className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm" />
-                </div>
+                {/* Correo */}
                 <div className="space-y-2">
                   <Label htmlFor="correo" className="text-[#EAECEF] text-sm font-medium">Correo Electrónico <span className="text-red-400">*</span></Label>
                   <Input id="correo" type="email" placeholder="tucorreo@ejemplo.com" value={formData.correo} onChange={(e) => setFormData((p) => ({ ...p, correo: e.target.value }))}
@@ -1218,129 +1251,32 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
                     </button>
                   </div>
                 </div>
-                <div id="deposit" className="space-y-2">
-                  <Label className="text-[#EAECEF] text-sm font-medium">Depósito USDT - Selecciona Red</Label>
-                  <Select value={selectedNetwork} onValueChange={setSelectedNetwork}>
-                    <SelectTrigger className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] rounded-xl h-12 text-sm">
-                      <SelectValue placeholder="Selecciona la red de depósito" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#1E2329] border-[#2B3139]">
-                      {USDT_NETWORKS.map((net) => (
-                        <SelectItem key={net.id} value={net.id} className="text-[#EAECEF] focus:bg-[#2B3139] focus:text-[#F0B90B]">
-                          <span className="flex items-center gap-2"><span>{net.icon}</span><span>{net.label}</span></span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {selectedNet && (
-                    <div className="mt-3 p-4 bg-[#0B0E11] rounded-xl border border-[#2B3139]">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[#848E9C] text-xs font-medium">{selectedNet.icon} Dirección {selectedNet.label}</span>
-                        <CopyButton text={selectedNet.address} />
-                      </div>
-                      <p className="text-[#EAECEF] text-xs md:text-sm font-mono break-all leading-relaxed">{selectedNet.address}</p>
-                    </div>
-                  )}
-                </div>
-                {/* Hash Pago */}
-                <div className="space-y-2">
-                  <Label htmlFor="hashPago" className="text-[#EAECEF] text-sm font-medium flex items-center gap-2">
-                    <Hash className="w-4 h-4 text-[#F0B90B]" />
-                    Hash Pago
-                  </Label>
-                  <Input id="hashPago" type="text" placeholder="Ingresa el hash de tu pago USDT" value={formData.hashPago} onChange={(e) => setFormData((p) => ({ ...p, hashPago: e.target.value }))}
-                    className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm font-mono" />
-                  <p className="text-[#5E6673] text-xs">Pega aquí el hash de transacción de tu depósito USDT.</p>
-                </div>
-                {/* Codigo Usuario */}
-                <div className="space-y-2">
-                  <Label htmlFor="codigoUsuario" className="text-[#EAECEF] text-sm font-medium">Codigo Usuario</Label>
-                  <Input id="codigoUsuario" type="text" placeholder="Ingresa tu codigo de usuario" value={formData.linkReferido} onChange={(e) => setFormData((p) => ({ ...p, linkReferido: e.target.value }))}
-                    className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm" />
-                </div>
-                {/* TRADING GCRM */}
-                <div className="space-y-2">
-                  <Label className="text-[#EAECEF] text-sm font-medium flex items-center gap-2">
-                    <BarChart3 className="w-4 h-4 text-[#F0B90B]" />
-                    TRADING GCRM
-                  </Label>
-                  <Select value={formData.tradingGcrm} onValueChange={(val) => setFormData((p) => ({ ...p, tradingGcrm: val }))}>
-                    <SelectTrigger className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] rounded-xl h-12 text-sm">
-                      <SelectValue placeholder="Selecciona tu paquete de Trading" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#1E2329] border-[#2B3139]">
-                      {TRADING_GCRM_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.id} value={opt.id} className="text-[#EAECEF] focus:bg-[#2B3139] focus:text-[#F0B90B]">
-                          <span className="flex items-center gap-2">
-                            <TrendingUp className="w-4 h-4 text-[#0ECB81]" />
-                            {opt.label}
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {formData.tradingGcrm && (
-                    <div className="flex items-center gap-2 p-3 bg-[#0B0E11] rounded-lg border border-[#0ECB81]/20">
-                      <TrendingUp className="w-4 h-4 text-[#0ECB81] shrink-0" />
-                      <p className="text-xs text-[#848E9C]">
-                        Paquete seleccionado: <span className="text-[#0ECB81] font-semibold">{TRADING_GCRM_OPTIONS.find(o => o.id === formData.tradingGcrm)?.label}</span>
-                      </p>
-                    </div>
-                  )}
-                </div>
-                {/* Licencia Ejecutiva */}
-                <div className="space-y-2">
-                  <Label className="text-[#EAECEF] text-sm font-medium flex items-center gap-2">
-                    <Crown className="w-4 h-4 text-[#F0B90B]" />
-                    Licencia Ejecutiva
-                  </Label>
-                  <Select value={selectedLicencia} onValueChange={setSelectedLicencia}>
-                    <SelectTrigger className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] rounded-xl h-12 text-sm">
-                      <SelectValue placeholder="Selecciona tu nivel de licencia" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#1E2329] border-[#2B3139]">
-                      {LICENCIAS.map((l) => (
-                        <SelectItem key={l.id} value={l.id} className="text-[#EAECEF] focus:bg-[#2B3139] focus:text-[#F0B90B]">
-                          <span className="flex items-center justify-between w-full gap-6">
-                            <span className="flex items-center gap-2">
-                              {l.id === 'supervisor' && <Crown className="w-4 h-4 text-[#F0B90B]" />}
-                              {l.id === 'coordinador' && <Crown className="w-4 h-4 text-[#F0B90B]" />}
-                              {l.id === 'promotor' && <Award className="w-4 h-4 text-[#F0B90B]" />}
-                              {l.id === 'asociado' && <Star className="w-4 h-4 text-[#F0B90B]" />}
-                              {l.label}
-                            </span>
-                            <span className="text-[#F0B90B] font-bold">{l.price}</span>
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {selectedLicencia && (
-                    <div className="flex items-center gap-2 p-3 bg-[#0B0E11] rounded-lg border border-[#2B3139]">
-                      <CheckCircle className="w-4 h-4 text-[#0ECB81] shrink-0" />
-                      <p className="text-xs text-[#848E9C]">
-                        Licencia <span className="text-[#F0B90B] font-semibold">{LICENCIAS.find(l => l.id === selectedLicencia)?.label}</span> - Inversión: <span className="text-[#EAECEF] font-semibold">{LICENCIAS.find(l => l.id === selectedLicencia)?.price} USDT</span>
-                      </p>
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-[#F0B90B]/10 to-[#F0B90B]/5 rounded-xl border border-[#F0B90B]/20">
-                  <Gift className="w-6 h-6 text-[#F0B90B] shrink-0" />
-                  <div>
-                    <p className="text-[#F0B90B] font-bold text-sm">Comisión 5% por Registro</p>
-                    <p className="text-[#848E9C] text-xs">Gana un 5% de comisión automática por cada persona que se registre con tu enlace.</p>
-                  </div>
-                </div>
                 <Button type="submit" disabled={isSubmitting}
-                  className="w-full bg-[#F0B90B] hover:bg-[#F8D12F] text-[#0B0E11] font-bold rounded-xl h-12 text-base transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                  className="w-full bg-[#F0B90B] hover:bg-[#F8D12F] text-[#0B0E11] font-bold rounded-xl h-12 text-base transition-all disabled:opacity-50">
                   {isSubmitting ? (
-                    <span className="flex items-center gap-2"><div className="w-4 h-4 border-2 border-[#0B0E11]/30 border-t-[#0B0E11] rounded-full animate-spin" />Procesando...</span>
+                    <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Registrando...</span>
                   ) : (
-                    <span className="flex items-center justify-center gap-2"><Users className="w-5 h-5" />Registrarme Ahora</span>
+                    <span className="flex items-center justify-center gap-2">Registrarme Ahora</span>
                   )}
                 </Button>
+                <p className="text-center text-xs text-[#5E6673]">
+                  Al registrarte aceptas los términos de GCRM Exchange.
+                </p>
               </form>
             </div>
+          </div>
+        </section>
+
+        {/* Info: Depositar USDT */}
+        <section id="deposit" className="py-16 md:py-20 bg-[#0B0E11]">
+          <div className="max-w-2xl mx-auto px-4 md:px-6">
+            <div className="text-center mb-8">
+              <h2 className="text-xl md:text-2xl font-bold text-[#EAECEF] mb-2">
+                Deposita <span className="text-gold-gradient">USDT</span>
+              </h2>
+              <p className="text-[#848E9C] text-sm">Selecciona la red y copia la dirección para tu depósito.</p>
+            </div>
+            <DepositInfo />
           </div>
         </section>
 
