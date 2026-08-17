@@ -11,30 +11,56 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Copy, Check, ChevronDown, ChevronUp, ExternalLink, Shield, Zap, Gift, ArrowRight, Wallet, Globe, Users, TrendingUp } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import {
+  Copy, Check, ChevronLeft, ChevronRight, ExternalLink, Shield, Zap, Gift,
+  ArrowRight, Wallet, Globe, Users, TrendingUp, LogOut, LogIn, User,
+  DollarSign, Clock, CheckCircle, AlertCircle, LayoutDashboard,
+  Eye, EyeOff, Loader2, BarChart3, UserPlus,
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+
+/* ─── TYPES ─── */
+
+interface SessionUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
+interface Referral {
+  id: string;
+  referredName: string;
+  referredEmail: string;
+  commission: number;
+  status: string;
+  depositAmount: number | null;
+  depositNetwork: string | null;
+  createdAt: string;
+}
+
+interface ReferralStats {
+  totalCommissions: number;
+  confirmedCommissions: number;
+  paidCommissions: number;
+  pendingCommissions: number;
+  totalReferrals: number;
+}
 
 /* ─── DATA ─── */
 
 const USDT_NETWORKS = [
-  {
-    id: 'bep20',
-    label: 'BEP 20 (BSC)',
-    address: '0xB4C692980666A2260F40123D6772Bec2ae464ea2',
-    icon: '🔷',
-  },
-  {
-    id: 'trx',
-    label: 'TRX (TRC 20)',
-    address: 'TL7NByppdqJc3EymPdu7yqDYwmy7rDJKQm',
-    icon: '🔺',
-  },
-  {
-    id: 'sol',
-    label: 'SOL (Solana)',
-    address: '74rwLcYBkYwADog7QwWa4PcomXUN9TX6da2CU7WYsnjA',
-    icon: '🟣',
-  },
+  { id: 'bep20', label: 'BEP 20 (BSC)', address: '0xB4C692980666A2260F40123D6772Bec2ae464ea2', icon: '🔷' },
+  { id: 'trx', label: 'TRX (TRC 20)', address: 'TL7NByppdqJc3EymPdu7yqDYwmy7rDJKQm', icon: '🗳' },
+  { id: 'sol', label: 'SOL (Solana)', address: '74rwLcYBkYwADog7QwWa4PcomXUN9TX6da2CU7WYsnjA', icon: '🟣' },
 ];
 
 const EXCHANGES = [
@@ -48,26 +74,10 @@ const EXCHANGES = [
 ];
 
 const FEATURES = [
-  {
-    icon: Shield,
-    title: 'Seguridad Total',
-    desc: 'Tecnología de seguridad de nivel bancario con encriptación de 256 bits y autenticación multi-factor.',
-  },
-  {
-    icon: Zap,
-    title: 'Transacciones Rápidas',
-    desc: 'Procesamiento de depósitos en tiempo real con confirmación en la red blockchain.',
-  },
-  {
-    icon: Gift,
-    title: 'Comisión 5%',
-    desc: 'Gana una comisión del 5% por cada registro referido. Programa de referidos ilimitado.',
-  },
-  {
-    icon: TrendingUp,
-    title: 'Listado Global',
-    desc: 'GCRM está listado en los principales exchanges del mundo: Binance, Coinbase, MEXC y más.',
-  },
+  { icon: Shield, title: 'Seguridad Total', desc: 'Tecnología de seguridad de nivel bancario con encriptación de 256 bits y autenticación multi-factor.' },
+  { icon: Zap, title: 'Transacciones Rápidas', desc: 'Procesamiento de depósitos en tiempo real con confirmación en la red blockchain.' },
+  { icon: Gift, title: 'Comisión 5%', desc: 'Gana una comisión del 5% por cada registro referido. Programa de referidos ilimitado.' },
+  { icon: TrendingUp, title: 'Listado Global', desc: 'GCRM está listado en los principales exchanges del mundo: Binance, Coinbase, MEXC y más.' },
 ];
 
 /* ─── COMPONENTS ─── */
@@ -80,27 +90,16 @@ function CopyButton({ text }: { text: string }) {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      toast({
-        title: 'Dirección copiada',
-        description: 'La dirección ha sido copiada al portapapeles.',
-      });
+      toast({ title: 'Dirección copiada', description: 'La dirección ha sido copiada al portapapeles.' });
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast({
-        title: 'Error al copiar',
-        description: 'No se pudo copiar la dirección.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error al copiar', description: 'No se pudo copiar la dirección.', variant: 'destructive' });
     }
   };
 
   return (
-    <button
-      onClick={handleCopy}
-      className="shrink-0 p-2 rounded-lg bg-[#2B3139] hover:bg-[#3B434D] transition-colors"
-      aria-label="Copiar dirección"
-    >
-      {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4 text-[#848E9C]" />}
+    <button onClick={handleCopy} className="shrink-0 p-2 rounded-lg bg-[#2B3139] hover:bg-[#3B434D] transition-colors" aria-label="Copiar dirección">
+      {copied ? <Check className="w-4 h-4 text-[#0ECB81]" /> : <Copy className="w-4 h-4 text-[#848E9C]" />}
     </button>
   );
 }
@@ -110,11 +109,7 @@ function ExchangeLogo({ name, color, initial }: { name: string; color: string; i
     <div className="flex flex-col items-center gap-2 min-w-[100px]">
       <div
         className="w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center text-xl md:text-2xl font-bold transition-all duration-300 hover:scale-110 hover:shadow-lg"
-        style={{
-          background: `linear-gradient(135deg, ${color}22, ${color}44)`,
-          border: `1px solid ${color}55`,
-          color: color,
-        }}
+        style={{ background: `linear-gradient(135deg, ${color}22, ${color}44)`, border: `1px solid ${color}55`, color }}
       >
         {initial}
       </div>
@@ -147,49 +142,31 @@ function ExchangeCarousel() {
   const scroll = (dir: 'left' | 'right') => {
     const el = scrollRef.current;
     if (!el) return;
-    const amount = 200;
-    el.scrollBy({ left: dir === 'left' ? -amount : amount, behavior: 'smooth' });
+    el.scrollBy({ left: dir === 'left' ? -200 : 200, behavior: 'smooth' });
   };
 
-  // Double the items for infinite feel
   const items = [...EXCHANGES, ...EXCHANGES];
 
   return (
     <div className="relative w-full">
-      {/* CoinMarketCap style header */}
       <div className="text-center mb-6">
         <p className="text-[#848E9C] text-sm uppercase tracking-widest mb-1">Listado en Exchanges</p>
         <h2 className="text-xl md:text-2xl font-bold text-[#EAECEF]">
           Disponible en los Mejores <span className="text-gold-gradient">Exchanges</span> del Mundo
         </h2>
       </div>
-
-      {/* Scrollable container */}
       <div className="relative group">
         {canScrollLeft && (
-          <button
-            onClick={() => scroll('left')}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-[#1E2329] border border-[#2B3139] flex items-center justify-center hover:bg-[#2B3139] transition-all opacity-0 group-hover:opacity-100"
-            aria-label="Anterior"
-          >
-            <ChevronUp className="w-5 h-5 rotate-[-90deg] text-[#EAECEF]" />
+          <button onClick={() => scroll('left')} className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-[#1E2329] border border-[#2B3139] flex items-center justify-center hover:bg-[#2B3139] transition-all opacity-0 group-hover:opacity-100" aria-label="Anterior">
+            <ChevronLeft className="w-5 h-5 text-[#EAECEF]" />
           </button>
         )}
         {canScrollRight && (
-          <button
-            onClick={() => scroll('right')}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-[#1E2329] border border-[#2B3139] flex items-center justify-center hover:bg-[#2B3139] transition-all opacity-0 group-hover:opacity-100"
-            aria-label="Siguiente"
-          >
-            <ChevronDown className="w-5 h-5 rotate-90 text-[#EAECEF]" />
+          <button onClick={() => scroll('right')} className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-[#1E2329] border border-[#2B3139] flex items-center justify-center hover:bg-[#2B3139] transition-all opacity-0 group-hover:opacity-100" aria-label="Siguiente">
+            <ChevronRight className="w-5 h-5 text-[#EAECEF]" />
           </button>
         )}
-
-        <div
-          ref={scrollRef}
-          className="flex gap-6 overflow-x-auto py-4 px-2 snap-x snap-mandatory scrollbar-hide"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
+        <div ref={scrollRef} className="flex gap-6 overflow-x-auto py-4 px-2 snap-x snap-mandatory" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {items.map((ex, i) => (
             <div key={`${ex.name}-${i}`} className="snap-center shrink-0">
               <ExchangeLogo {...ex} />
@@ -197,8 +174,6 @@ function ExchangeCarousel() {
           ))}
         </div>
       </div>
-
-      {/* CoinMarketCap badge */}
       <div className="flex items-center justify-center gap-2 mt-4">
         <div className="h-px bg-[#2B3139] w-16" />
         <span className="text-[#848E9C] text-xs uppercase tracking-wider">Verificado en CoinMarketCap</span>
@@ -214,14 +189,11 @@ function HotcoinSection() {
   return (
     <div className="glass-card rounded-2xl p-6 md:p-8">
       <div className="flex flex-col md:flex-row items-center gap-6">
-        {/* Hotcoin Logo */}
         <div className="shrink-0">
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#1E90FF] to-[#0066CC] flex items-center justify-center">
             <span className="text-white text-2xl font-bold">H</span>
           </div>
         </div>
-
-        {/* Content */}
         <div className="flex-1 text-center md:text-left">
           <h3 className="text-xl md:text-2xl font-bold text-[#EAECEF] mb-2">
             GCRM en <span className="text-[#1E90FF]">Hotcoin</span>
@@ -231,20 +203,12 @@ function HotcoinSection() {
             de manera segura en una de las plataformas más confiables del mercado cripto.
           </p>
         </div>
-
-        {/* CTA */}
-        <a
-          href="https://www.hotcoin.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="shrink-0 flex items-center gap-2 px-6 py-3 rounded-xl bg-[#1E90FF] hover:bg-[#1A7AE6] text-white font-semibold text-sm transition-all hover:shadow-lg hover:shadow-[#1E90FF]/20"
-        >
+        <a href="https://www.hotcoin.com" target="_blank" rel="noopener noreferrer"
+          className="shrink-0 flex items-center gap-2 px-6 py-3 rounded-xl bg-[#1E90FF] hover:bg-[#1A7AE6] text-white font-semibold text-sm transition-all hover:shadow-lg hover:shadow-[#1E90FF]/20">
           Operar Ahora
           <ExternalLink className="w-4 h-4" />
         </a>
       </div>
-
-      {/* Trading pair info */}
       <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: 'Par de Trading', value: 'GCRM/USDT' },
@@ -262,16 +226,443 @@ function HotcoinSection() {
   );
 }
 
-/* ─── MAIN PAGE ─── */
+/* ─── LOGIN DIALOG ─── */
 
-export default function Home() {
-  const [formData, setFormData] = useState({
-    nombres: '',
-    correo: '',
-    red: '',
-    linkReferido: '',
-    oficinaVirtual: '',
-  });
+function LoginDialog({ open, onOpenChange, onSwitchToRegister }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSwitchToRegister: () => void;
+}) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      toast({ title: 'Campos requeridos', description: 'Ingresa correo y contraseña.', variant: 'destructive' });
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast({ title: 'Error', description: data.error, variant: 'destructive' });
+      } else {
+        toast({ title: 'Bienvenido', description: `Hola, ${data.user.name}.` });
+        onOpenChange(false);
+        setEmail(''); setPassword('');
+        window.location.reload();
+      }
+    } catch {
+      toast({ title: 'Error', description: 'No se pudo conectar al servidor.', variant: 'destructive' });
+    }
+    setLoading(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="bg-[#1E2329] border-[#2B3139] text-[#EAECEF] sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold flex items-center gap-2">
+            <LogIn className="w-5 h-5 text-[#F0B90B]" />
+            Iniciar Sesión
+          </DialogTitle>
+          <DialogDescription className="text-[#848E9C]">
+            Ingresa tus credenciales para acceder a tu panel de comisiones.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleLogin} className="space-y-4 mt-4">
+          <div className="space-y-2">
+            <Label htmlFor="login-email" className="text-sm text-[#EAECEF]">Correo Electrónico</Label>
+            <Input id="login-email" type="email" placeholder="tu@correo.com" value={email} onChange={(e) => setEmail(e.target.value)}
+              className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-11 text-sm" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="login-pass" className="text-sm text-[#EAECEF]">Contraseña</Label>
+            <div className="relative">
+              <Input id="login-pass" type={showPassword ? 'text' : 'password'} placeholder="Tu contraseña" value={password} onChange={(e) => setPassword(e.target.value)}
+                className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-11 text-sm pr-10" />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#848E9C] hover:text-[#EAECEF] transition-colors">
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+          <Button type="submit" disabled={loading} className="w-full bg-[#F0B90B] hover:bg-[#F8D12F] text-[#0B0E11] font-bold rounded-xl h-11 text-sm transition-all disabled:opacity-50">
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Iniciar Sesión'}
+          </Button>
+          <p className="text-center text-sm text-[#848E9C]">
+            ¿No tienes cuenta?{' '}
+            <button type="button" onClick={() => { onOpenChange(false); onSwitchToRegister(); }} className="text-[#F0B90B] hover:underline font-medium">
+              Regístrate aquí
+            </button>
+          </p>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ─── REGISTER DIALOG ─── */
+
+function RegisterDialog({ open, onOpenChange, onSwitchToLogin }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSwitchToLogin: () => void;
+}) {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name || !email || !password) {
+      toast({ title: 'Campos requeridos', description: 'Completa todos los campos.', variant: 'destructive' });
+      return;
+    }
+    if (password.length < 6) {
+      toast({ title: 'Contraseña corta', description: 'Mínimo 6 caracteres.', variant: 'destructive' });
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast({ title: 'Correo inválido', description: 'Ingresa un correo válido.', variant: 'destructive' });
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast({ title: 'Error', description: data.error, variant: 'destructive' });
+      } else {
+        toast({ title: 'Registro exitoso', description: `Bienvenido/a ${data.user.name}. Revisa tus comisiones.` });
+        onOpenChange(false);
+        setName(''); setEmail(''); setPassword('');
+        window.location.reload();
+      }
+    } catch {
+      toast({ title: 'Error', description: 'No se pudo conectar al servidor.', variant: 'destructive' });
+    }
+    setLoading(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="bg-[#1E2329] border-[#2B3139] text-[#EAECEF] sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold flex items-center gap-2">
+            <UserPlus className="w-5 h-5 text-[#F0B90B]" />
+            Crear Cuenta
+          </DialogTitle>
+          <DialogDescription className="text-[#848E9C]">
+            Regístrate para ver tus comisiones del 5% por referidos.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleRegister} className="space-y-4 mt-4">
+          <div className="space-y-2">
+            <Label htmlFor="reg-name" className="text-sm text-[#EAECEF]">Nombre Completo</Label>
+            <Input id="reg-name" type="text" placeholder="Tu nombre" value={name} onChange={(e) => setName(e.target.value)}
+              className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-11 text-sm" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="reg-email" className="text-sm text-[#EAECEF]">Correo Electrónico</Label>
+            <Input id="reg-email" type="email" placeholder="tu@correo.com" value={email} onChange={(e) => setEmail(e.target.value)}
+              className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-11 text-sm" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="reg-pass" className="text-sm text-[#EAECEF]">Contraseña (mínimo 6 caracteres)</Label>
+            <div className="relative">
+              <Input id="reg-pass" type={showPassword ? 'text' : 'password'} placeholder="Tu contraseña" value={password} onChange={(e) => setPassword(e.target.value)}
+                className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-11 text-sm pr-10" />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#848E9C] hover:text-[#EAECEF] transition-colors">
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+          <Button type="submit" disabled={loading} className="w-full bg-[#F0B90B] hover:bg-[#F8D12F] text-[#0B0E11] font-bold rounded-xl h-11 text-sm transition-all disabled:opacity-50">
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Crear Cuenta'}
+          </Button>
+          <p className="text-center text-sm text-[#848E9C]">
+            ¿Ya tienes cuenta?{' '}
+            <button type="button" onClick={() => { onOpenChange(false); onSwitchToLogin(); }} className="text-[#F0B90B] hover:underline font-medium">
+              Inicia sesión
+            </button>
+          </p>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ─── COMMISSIONS DASHBOARD ─── */
+
+function Dashboard({ user, onLogout }: { user: SessionUser; onLogout: () => void }) {
+  const [stats, setStats] = useState<ReferralStats | null>(null);
+  const [referrals, setReferrals] = useState<Referral[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await fetch('/api/referrals');
+        if (res.ok && !cancelled) {
+          const data = await res.json();
+          setStats(data.stats);
+          setReferrals(data.referrals);
+        }
+      } catch {
+        if (!cancelled) toast({ title: 'Error', description: 'No se pudieron cargar las comisiones.', variant: 'destructive' });
+      }
+      if (!cancelled) setLoading(false);
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [toast]);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      toast({ title: 'Sesión cerrada', description: 'Has cerrado sesión correctamente.' });
+      onLogout();
+      window.location.reload();
+    } catch {
+      toast({ title: 'Error', description: 'No se pudo cerrar sesión.', variant: 'destructive' });
+    }
+    setLoggingOut(false);
+  };
+
+  const statusConfig: Record<string, { color: string; bg: string; icon: typeof CheckCircle; label: string }> = {
+    confirmed: { color: 'text-[#0ECB81]', bg: 'bg-[#0ECB81]/10', icon: CheckCircle, label: 'Confirmado' },
+    paid: { color: 'text-[#F0B90B]', bg: 'bg-[#F0B90B]/10', icon: DollarSign, label: 'Pagado' },
+    pending: { color: 'text-[#FCD535]', bg: 'bg-[#FCD535]/10', icon: Clock, label: 'Pendiente' },
+  };
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
+  return (
+    <div className="min-h-screen bg-[#0B0E11] flex flex-col">
+      {/* Dashboard Navbar */}
+      <header className="sticky top-0 z-50 bg-[#0B0E11]/95 backdrop-blur-md border-b border-[#2B3139]">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img src="/assets/gcrm-logo.png" alt="GCRM Logo" className="w-8 h-8 rounded-full" />
+            <span className="text-xl font-bold text-gold-gradient">GCRM Exchange</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="hidden sm:flex items-center gap-2 text-sm text-[#848E9C]">
+              <User className="w-4 h-4" />
+              <span>{user.name}</span>
+            </div>
+            <Button onClick={handleLogout} disabled={loggingOut} variant="outline"
+              className="border-[#2B3139] text-[#848E9C] hover:text-red-400 hover:border-red-400/30 rounded-lg text-sm gap-2">
+              {loggingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+              <span className="hidden sm:inline">Salir</span>
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-1 py-8 md:py-12">
+        <div className="max-w-7xl mx-auto px-4 md:px-6">
+          {/* Welcome Header */}
+          <div className="mb-8">
+            <h1 className="text-2xl md:text-3xl font-bold text-[#EAECEF] mb-2">
+              Panel de <span className="text-gold-gradient">Comisiones</span>
+            </h1>
+            <p className="text-[#848E9C] text-sm">Bienvenido/a, <span className="text-[#EAECEF] font-medium">{user.name}</span>. Aquí puedes ver tus ganancias por referidos.</p>
+          </div>
+
+          {/* Stats Grid */}
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="glass-card rounded-2xl p-5 animate-pulse">
+                  <div className="w-10 h-10 rounded-xl bg-[#2B3139] mb-3" />
+                  <div className="h-4 bg-[#2B3139] rounded w-20 mb-2" />
+                  <div className="h-7 bg-[#2B3139] rounded w-28" />
+                </div>
+              ))}
+            </div>
+          ) : stats ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              <StatCard icon={DollarSign} title="Comisión Total" value={`$${stats.totalCommissions.toFixed(2)}`} subtitle={`${stats.totalReferrals} referidos`} color="#F0B90B" />
+              <StatCard icon={CheckCircle} title="Confirmadas" value={`$${stats.confirmedCommissions.toFixed(2)}`} subtitle="Listas para cobrar" color="#0ECB81" />
+              <StatCard icon={DollarSign} title="Pagadas" value={`$${stats.paidCommissions.toFixed(2)}`} subtitle="Ya depositadas" color="#2EB6EA" />
+              <StatCard icon={Clock} title="Pendientes" value={`$${stats.pendingCommissions.toFixed(2)}`} subtitle="Esperando depósito" color="#FCD535" />
+            </div>
+          ) : null}
+
+          {/* Commission Rate Highlight */}
+          <div className="glass-card rounded-2xl p-5 mb-8 flex flex-col sm:flex-row items-center gap-4 border-[#F0B90B]/30">
+            <div className="w-14 h-14 rounded-2xl bg-[#F0B90B]/10 flex items-center justify-center shrink-0">
+              <Gift className="w-7 h-7 text-[#F0B90B]" />
+            </div>
+            <div className="flex-1 text-center sm:text-left">
+              <h3 className="text-[#F0B90B] font-bold text-base">Tu tasa de comisión: 5%</h3>
+              <p className="text-[#848E9C] text-sm">Por cada referido que deposite, ganas el 5% de su depósito automáticamente.</p>
+            </div>
+            <Badge className="bg-[#F0B90B]/10 text-[#F0B90B] border-[#F0B90B]/20 text-sm px-3 py-1 rounded-lg">ACTIVA</Badge>
+          </div>
+
+          {/* Referrals Table */}
+          <div className="glass-card rounded-2xl overflow-hidden">
+            <div className="p-5 border-b border-[#2B3139] flex items-center gap-3">
+              <LayoutDashboard className="w-5 h-5 text-[#F0B90B]" />
+              <h2 className="text-lg font-bold text-[#EAECEF]">Historial de Referidos</h2>
+              <Badge variant="secondary" className="bg-[#2B3139] text-[#848E9C] text-xs">
+                {referrals.length} registros
+              </Badge>
+            </div>
+
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#2B3139]">
+                    <th className="text-left px-5 py-3 text-[#848E9C] font-medium">Referido</th>
+                    <th className="text-left px-5 py-3 text-[#848E9C] font-medium">Red</th>
+                    <th className="text-right px-5 py-3 text-[#848E9C] font-medium">Depósito</th>
+                    <th className="text-right px-5 py-3 text-[#848E9C] font-medium">Comisión (5%)</th>
+                    <th className="text-center px-5 py-3 text-[#848E9C] font-medium">Estado</th>
+                    <th className="text-right px-5 py-3 text-[#848E9C] font-medium">Fecha</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {referrals.length === 0 ? (
+                    <tr><td colSpan={6} className="text-center py-12 text-[#848E9C]">No tienes referidos aún. Comparte tu enlace.</td></tr>
+                  ) : (
+                    referrals.map((ref) => {
+                      const sc = statusConfig[ref.status] || statusConfig.pending;
+                      const StatusIcon = sc.icon;
+                      return (
+                        <tr key={ref.id} className="border-b border-[#2B3139]/50 hover:bg-[#2B3139]/30 transition-colors">
+                          <td className="px-5 py-4">
+                            <div>
+                              <p className="text-[#EAECEF] font-medium">{ref.referredName}</p>
+                              <p className="text-[#848E9C] text-xs">{ref.referredEmail}</p>
+                            </div>
+                          </td>
+                          <td className="px-5 py-4 text-[#848E9C]">{ref.depositNetwork || '-'}</td>
+                          <td className="px-5 py-4 text-right text-[#EAECEF] font-medium">${(ref.depositAmount || 0).toFixed(2)}</td>
+                          <td className="px-5 py-4 text-right text-[#0ECB81] font-semibold">${ref.commission.toFixed(2)}</td>
+                          <td className="px-5 py-4 text-center">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${sc.bg} ${sc.color}`}>
+                              <StatusIcon className="w-3.5 h-3.5" />
+                              {sc.label}
+                            </span>
+                          </td>
+                          <td className="px-5 py-4 text-right text-[#848E9C]">{formatDate(ref.createdAt)}</td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden p-4 space-y-3">
+              {referrals.length === 0 ? (
+                <p className="text-center py-8 text-[#848E9C]">No tienes referidos aún.</p>
+              ) : (
+                referrals.map((ref) => {
+                  const sc = statusConfig[ref.status] || statusConfig.pending;
+                  const StatusIcon = sc.icon;
+                  return (
+                    <div key={ref.id} className="bg-[#0B0E11] rounded-xl p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <p className="text-[#EAECEF] font-medium text-sm">{ref.referredName}</p>
+                          <p className="text-[#848E9C] text-xs">{ref.referredEmail}</p>
+                        </div>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${sc.bg} ${sc.color}`}>
+                          <StatusIcon className="w-3 h-3" /> {sc.label}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-center">
+                        <div>
+                          <p className="text-[#848E9C] text-[10px]">Red</p>
+                          <p className="text-[#EAECEF] text-xs font-medium">{ref.depositNetwork || '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[#848E9C] text-[10px]">Depósito</p>
+                          <p className="text-[#EAECEF] text-xs font-medium">${(ref.depositAmount || 0).toFixed(2)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[#848E9C] text-[10px]">Comisión</p>
+                          <p className="text-[#0ECB81] text-xs font-bold">${ref.commission.toFixed(2)}</p>
+                        </div>
+                      </div>
+                      <p className="text-[#848E9C] text-[10px] mt-2 text-right">{formatDate(ref.createdAt)}</p>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-[#0B0E11] border-t border-[#2B3139] mt-auto">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-xs text-[#848E9C]">© 2025 GCRM Exchange. Todos los derechos reservados.</span>
+            <div className="flex items-center gap-4 text-xs text-[#848E9C]">
+              <a href="#" className="hover:text-[#F0B90B] transition-colors">Términos</a>
+              <a href="#" className="hover:text-[#F0B90B] transition-colors">Privacidad</a>
+              <a href="#" className="hover:text-[#F0B90B] transition-colors">Soporte</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+/* ─── STAT CARD ─── */
+
+function StatCard({ icon: Icon, title, value, subtitle, color }: {
+  icon: typeof DollarSign; title: string; value: string; subtitle: string; color: string;
+}) {
+  return (
+    <div className="glass-card rounded-2xl p-5">
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${color}15` }}>
+          <Icon className="w-5 h-5" style={{ color }} />
+        </div>
+        <span className="text-[#848E9C] text-xs font-medium uppercase tracking-wider">{title}</span>
+      </div>
+      <p className="text-2xl font-bold text-[#EAECEF] mb-1">{value}</p>
+      <p className="text-[#848E9C] text-xs">{subtitle}</p>
+    </div>
+  );
+}
+
+/* ─── LANDING PAGE ─── */
+
+function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister: () => void }) {
+  const [formData, setFormData] = useState({ nombres: '', correo: '', red: '', linkReferido: '', oficinaVirtual: '' });
   const [selectedNetwork, setSelectedNetwork] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -280,7 +671,6 @@ export default function Home() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!formData.nombres.trim()) {
       toast({ title: 'Campo requerido', description: 'Por favor ingresa tu nombre completo.', variant: 'destructive' });
       return;
@@ -289,112 +679,73 @@ export default function Home() {
       toast({ title: 'Correo inválido', description: 'Por favor ingresa un correo electrónico válido.', variant: 'destructive' });
       return;
     }
-
     setIsSubmitting(true);
-    // Simulate submission
     await new Promise((r) => setTimeout(r, 1500));
     setIsSubmitting(false);
-
-    toast({
-      title: 'Registro exitoso',
-      description: `Bienvenido/a ${formData.nombres}. Recibirás tu comisión del 5% por registro.`,
-    });
-
-    setFormData({ nombres: '', correo: '', red: '', linkReferido: '', oficinaVirtual: '' });
-    setSelectedNetwork('');
+    toast({ title: 'Solicitud enviada', description: 'Por favor inicia sesión para ver tus comisiones.' });
+    onRegister();
   };
 
   return (
     <div className="min-h-screen bg-[#0B0E11] flex flex-col">
-      {/* ─── NAVBAR ─── */}
+      {/* Navbar */}
       <header className="sticky top-0 z-50 bg-[#0B0E11]/95 backdrop-blur-md border-b border-[#2B3139]">
         <nav className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
-          {/* Logo */}
           <div className="flex items-center gap-3">
             <img src="/assets/gcrm-logo.png" alt="GCRM Logo" className="w-8 h-8 rounded-full" />
             <span className="text-xl font-bold text-gold-gradient">GCRM Exchange</span>
           </div>
-
-          {/* Nav Links (desktop) */}
           <div className="hidden md:flex items-center gap-6 text-sm text-[#848E9C]">
             <a href="#form" className="hover:text-[#F0B90B] transition-colors">Registro</a>
             <a href="#deposit" className="hover:text-[#F0B90B] transition-colors">Depositar</a>
             <a href="#exchanges" className="hover:text-[#F0B90B] transition-colors">Exchanges</a>
             <a href="#hotcoin" className="hover:text-[#F0B90B] transition-colors">Hotcoin</a>
           </div>
-
-          {/* CTA */}
-          <Button
-            onClick={() => document.getElementById('form')?.scrollIntoView({ behavior: 'smooth' })}
-            className="bg-[#F0B90B] hover:bg-[#F8D12F] text-[#0B0E11] font-semibold text-sm rounded-lg px-5"
-          >
-            Registrarse
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={onLogin} variant="outline" className="border-[#2B3139] text-[#EAECEF] hover:bg-[#1E2329] rounded-lg text-sm gap-2">
+              <LogIn className="w-4 h-4" />
+              <span className="hidden sm:inline">Ingresar</span>
+            </Button>
+          </div>
         </nav>
       </header>
 
       <main className="flex-1">
-        {/* ─── HERO + BANNER ─── */}
+        {/* Hero */}
         <section className="relative overflow-hidden">
-          {/* Banner Image */}
           <div className="absolute inset-0">
-            <img
-              src="/assets/banner.png"
-              alt="GCRM Banner"
-              className="w-full h-full object-cover opacity-30"
-            />
+            <img src="/assets/banner.png" alt="GCRM Banner" className="w-full h-full object-cover opacity-30" />
             <div className="absolute inset-0 bg-gradient-to-b from-[#0B0E11]/60 via-[#0B0E11]/80 to-[#0B0E11]" />
           </div>
-
           <div className="relative max-w-7xl mx-auto px-4 md:px-6 py-16 md:py-24 lg:py-32">
             <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-              {/* Left - Text */}
               <div className="flex-1 text-center lg:text-left animate-fade-in-up">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#F0B90B]/10 border border-[#F0B90B]/20 mb-6">
                   <div className="w-2 h-2 rounded-full bg-[#0ECB81] animate-pulse" />
                   <span className="text-[#F0B90B] text-xs font-medium">Listado en múltiples exchanges</span>
                 </div>
-
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-6">
-                  <span className="text-[#EAECEF]">Regístrate en</span>
-                  <br />
+                  <span className="text-[#EAECEF]">Regístrate en</span><br />
                   <span className="text-gold-gradient">GCRM Exchange</span>
                 </h1>
-
                 <p className="text-[#848E9C] text-base md:text-lg leading-relaxed mb-8 max-w-lg mx-auto lg:mx-0">
                   Deposita USDT y recibe una comisión del <span className="text-[#F0B90B] font-semibold">5%</span> por cada registro.
                   GCRM está disponible en Binance, Coinbase, MEXC, KuCoin y más.
                 </p>
-
                 <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
-                  <Button
-                    onClick={() => document.getElementById('form')?.scrollIntoView({ behavior: 'smooth' })}
-                    size="lg"
-                    className="w-full sm:w-auto bg-[#F0B90B] hover:bg-[#F8D12F] text-[#0B0E11] font-bold rounded-xl px-8 py-6 text-base animate-pulse-gold"
-                  >
-                    Comenzar Ahora
-                    <ArrowRight className="w-5 h-5 ml-2" />
+                  <Button onClick={onRegister} size="lg"
+                    className="w-full sm:w-auto bg-[#F0B90B] hover:bg-[#F8D12F] text-[#0B0E11] font-bold rounded-xl px-8 py-6 text-base animate-pulse-gold">
+                    Comenzar Ahora <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    onClick={() => document.getElementById('exchanges')?.scrollIntoView({ behavior: 'smooth' })}
-                    className="w-full sm:w-auto border-[#2B3139] text-[#EAECEF] hover:bg-[#1E2329] rounded-xl px-8 py-6 text-base"
-                  >
+                  <Button variant="outline" size="lg" onClick={() => document.getElementById('exchanges')?.scrollIntoView({ behavior: 'smooth' })}
+                    className="w-full sm:w-auto border-[#2B3139] text-[#EAECEF] hover:bg-[#1E2329] rounded-xl px-8 py-6 text-base">
                     Ver Exchanges
                   </Button>
                 </div>
               </div>
-
-              {/* Right - Coin graphic */}
               <div className="shrink-0 animate-float">
                 <div className="relative">
-                  <img
-                    src="/assets/gcrm-coin.png"
-                    alt="GCRM Coin"
-                    className="w-48 h-48 md:w-64 md:h-64 lg:w-72 lg:h-72 object-contain drop-shadow-2xl"
-                  />
-                  {/* Glow effect */}
+                  <img src="/assets/gcrm-coin.png" alt="GCRM Coin" className="w-48 h-48 md:w-64 md:h-64 lg:w-72 lg:h-72 object-contain drop-shadow-2xl" />
                   <div className="absolute inset-0 rounded-full bg-[#F0B90B]/10 blur-3xl -z-10 scale-150" />
                 </div>
               </div>
@@ -402,16 +753,12 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ─── FEATURES ─── */}
+        {/* Features */}
         <section className="py-16 md:py-20 bg-[#0B0E11]">
           <div className="max-w-7xl mx-auto px-4 md:px-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {FEATURES.map((f, i) => (
-                <div
-                  key={f.title}
-                  className="glass-card rounded-2xl p-6 hover:border-[#F0B90B]/30 transition-all duration-300 group"
-                  style={{ animationDelay: `${i * 100}ms` }}
-                >
+                <div key={f.title} className="glass-card rounded-2xl p-6 hover:border-[#F0B90B]/30 transition-all duration-300 group">
                   <div className="w-12 h-12 rounded-xl bg-[#F0B90B]/10 flex items-center justify-center mb-4 group-hover:bg-[#F0B90B]/20 transition-colors">
                     <f.icon className="w-6 h-6 text-[#F0B90B]" />
                   </div>
@@ -423,11 +770,10 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ─── REGISTRATION FORM ─── */}
+        {/* Registration Form */}
         <section id="form" className="py-16 md:py-20 bg-[#0B0E11]">
           <div className="max-w-7xl mx-auto px-4 md:px-6">
             <div className="max-w-2xl mx-auto">
-              {/* Header */}
               <div className="text-center mb-10">
                 <div className="inline-flex items-center gap-2 mb-4">
                   <Wallet className="w-5 h-5 text-[#F0B90B]" />
@@ -436,118 +782,55 @@ export default function Home() {
                 <h2 className="text-2xl md:text-3xl font-bold text-[#EAECEF] mb-3">
                   Crea tu Cuenta <span className="text-gold-gradient">GCRM</span>
                 </h2>
-                <p className="text-[#848E9C] text-sm">
-                  Completa el formulario para registrarte y recibir tu comisión del 5%.
-                </p>
+                <p className="text-[#848E9C] text-sm">Completa el formulario para registrarte y recibir tu comisión del 5%.</p>
               </div>
-
-              {/* Form Card */}
               <form onSubmit={handleSubmit} className="glass-card rounded-2xl p-6 md:p-8 space-y-6">
-                {/* Nombres */}
                 <div className="space-y-2">
-                  <Label htmlFor="nombres" className="text-[#EAECEF] text-sm font-medium">
-                    Nombres Completos <span className="text-red-400">*</span>
-                  </Label>
-                  <Input
-                    id="nombres"
-                    type="text"
-                    placeholder="Ingresa tu nombre completo"
-                    value={formData.nombres}
-                    onChange={(e) => setFormData((p) => ({ ...p, nombres: e.target.value }))}
-                    className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm"
-                  />
+                  <Label htmlFor="nombres" className="text-[#EAECEF] text-sm font-medium">Nombres Completos <span className="text-red-400">*</span></Label>
+                  <Input id="nombres" type="text" placeholder="Ingresa tu nombre completo" value={formData.nombres} onChange={(e) => setFormData((p) => ({ ...p, nombres: e.target.value }))}
+                    className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm" />
                 </div>
-
-                {/* Correo */}
                 <div className="space-y-2">
-                  <Label htmlFor="correo" className="text-[#EAECEF] text-sm font-medium">
-                    Correo Electrónico <span className="text-red-400">*</span>
-                  </Label>
-                  <Input
-                    id="correo"
-                    type="email"
-                    placeholder="tucorreo@ejemplo.com"
-                    value={formData.correo}
-                    onChange={(e) => setFormData((p) => ({ ...p, correo: e.target.value }))}
-                    className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm"
-                  />
+                  <Label htmlFor="correo" className="text-[#EAECEF] text-sm font-medium">Correo Electrónico <span className="text-red-400">*</span></Label>
+                  <Input id="correo" type="email" placeholder="tucorreo@ejemplo.com" value={formData.correo} onChange={(e) => setFormData((p) => ({ ...p, correo: e.target.value }))}
+                    className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm" />
                 </div>
-
-                {/* Depósito USDT - Red */}
                 <div id="deposit" className="space-y-2">
-                  <Label className="text-[#EAECEF] text-sm font-medium">
-                    Depósito USDT - Selecciona Red
-                  </Label>
+                  <Label className="text-[#EAECEF] text-sm font-medium">Depósito USDT - Selecciona Red</Label>
                   <Select value={selectedNetwork} onValueChange={setSelectedNetwork}>
                     <SelectTrigger className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] rounded-xl h-12 text-sm">
                       <SelectValue placeholder="Selecciona la red de depósito" />
                     </SelectTrigger>
                     <SelectContent className="bg-[#1E2329] border-[#2B3139]">
                       {USDT_NETWORKS.map((net) => (
-                        <SelectItem
-                          key={net.id}
-                          value={net.id}
-                          className="text-[#EAECEF] focus:bg-[#2B3139] focus:text-[#F0B90B]"
-                        >
-                          <span className="flex items-center gap-2">
-                            <span>{net.icon}</span>
-                            <span>{net.label}</span>
-                          </span>
+                        <SelectItem key={net.id} value={net.id} className="text-[#EAECEF] focus:bg-[#2B3139] focus:text-[#F0B90B]">
+                          <span className="flex items-center gap-2"><span>{net.icon}</span><span>{net.label}</span></span>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-
-                  {/* Show address when network selected */}
                   {selectedNet && (
                     <div className="mt-3 p-4 bg-[#0B0E11] rounded-xl border border-[#2B3139]">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-[#848E9C] text-xs font-medium">
-                          {selectedNet.icon} Dirección {selectedNet.label}
-                        </span>
+                        <span className="text-[#848E9C] text-xs font-medium">{selectedNet.icon} Dirección {selectedNet.label}</span>
                         <CopyButton text={selectedNet.address} />
                       </div>
-                      <p className="text-[#EAECEF] text-xs md:text-sm font-mono break-all leading-relaxed">
-                        {selectedNet.address}
-                      </p>
+                      <p className="text-[#EAECEF] text-xs md:text-sm font-mono break-all leading-relaxed">{selectedNet.address}</p>
                     </div>
                   )}
                 </div>
-
-                {/* Link Referido */}
                 <div className="space-y-2">
-                  <Label htmlFor="linkReferido" className="text-[#EAECEF] text-sm font-medium">
-                    Link Referido
-                  </Label>
-                  <Input
-                    id="linkReferido"
-                    type="text"
-                    placeholder="https://tu-link-referido.com"
-                    value={formData.linkReferido}
-                    onChange={(e) => setFormData((p) => ({ ...p, linkReferido: e.target.value }))}
-                    className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm"
-                  />
+                  <Label htmlFor="linkReferido" className="text-[#EAECEF] text-sm font-medium">Link Referido</Label>
+                  <Input id="linkReferido" type="text" placeholder="https://tu-link-referido.com" value={formData.linkReferido} onChange={(e) => setFormData((p) => ({ ...p, linkReferido: e.target.value }))}
+                    className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm" />
                 </div>
-
-                {/* Oficina Virtual */}
                 <div className="space-y-2">
                   <Label htmlFor="oficinaVirtual" className="text-[#EAECEF] text-sm font-medium">
-                    <span className="flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-[#F0B90B]" />
-                      Oficina Virtual
-                    </span>
+                    <span className="flex items-center gap-2"><Globe className="w-4 h-4 text-[#F0B90B]" />Oficina Virtual</span>
                   </Label>
-                  <Input
-                    id="oficinaVirtual"
-                    type="text"
-                    placeholder="URL de tu oficina virtual"
-                    value={formData.oficinaVirtual}
-                    onChange={(e) => setFormData((p) => ({ ...p, oficinaVirtual: e.target.value }))}
-                    className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm"
-                  />
+                  <Input id="oficinaVirtual" type="text" placeholder="URL de tu oficina virtual" value={formData.oficinaVirtual} onChange={(e) => setFormData((p) => ({ ...p, oficinaVirtual: e.target.value }))}
+                    className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm" />
                 </div>
-
-                {/* Commission Badge */}
                 <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-[#F0B90B]/10 to-[#F0B90B]/5 rounded-xl border border-[#F0B90B]/20">
                   <Gift className="w-6 h-6 text-[#F0B90B] shrink-0" />
                   <div>
@@ -555,23 +838,12 @@ export default function Home() {
                     <p className="text-[#848E9C] text-xs">Gana un 5% de comisión automática por cada persona que se registre con tu enlace.</p>
                   </div>
                 </div>
-
-                {/* Submit */}
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-[#F0B90B] hover:bg-[#F8D12F] text-[#0B0E11] font-bold rounded-xl h-12 text-base transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+                <Button type="submit" disabled={isSubmitting}
+                  className="w-full bg-[#F0B90B] hover:bg-[#F8D12F] text-[#0B0E11] font-bold rounded-xl h-12 text-base transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                   {isSubmitting ? (
-                    <span className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-[#0B0E11]/30 border-t-[#0B0E11] rounded-full animate-spin" />
-                      Procesando...
-                    </span>
+                    <span className="flex items-center gap-2"><div className="w-4 h-4 border-2 border-[#0B0E11]/30 border-t-[#0B0E11] rounded-full animate-spin" />Procesando...</span>
                   ) : (
-                    <span className="flex items-center justify-center gap-2">
-                      <Users className="w-5 h-5" />
-                      Registrarme Ahora
-                    </span>
+                    <span className="flex items-center justify-center gap-2"><Users className="w-5 h-5" />Registrarme Ahora</span>
                   )}
                 </Button>
               </form>
@@ -579,21 +851,17 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ─── EXCHANGE CAROUSEL ─── */}
+        {/* Exchanges Carousel */}
         <section id="exchanges" className="py-16 md:py-20 bg-[#0B0E11]">
-          <div className="max-w-7xl mx-auto px-4 md:px-6">
-            <ExchangeCarousel />
-          </div>
+          <div className="max-w-7xl mx-auto px-4 md:px-6"><ExchangeCarousel /></div>
         </section>
 
-        {/* ─── HOTCOIN SECTION ─── */}
+        {/* Hotcoin */}
         <section id="hotcoin" className="py-16 md:py-20 bg-[#0B0E11]">
-          <div className="max-w-5xl mx-auto px-4 md:px-6">
-            <HotcoinSection />
-          </div>
+          <div className="max-w-5xl mx-auto px-4 md:px-6"><HotcoinSection /></div>
         </section>
 
-        {/* ─── BOTTOM CTA ─── */}
+        {/* Bottom CTA */}
         <section className="py-16 md:py-20 bg-[#0B0E11]">
           <div className="max-w-4xl mx-auto px-4 md:px-6 text-center">
             <h2 className="text-2xl md:text-3xl font-bold text-[#EAECEF] mb-4">
@@ -601,29 +869,21 @@ export default function Home() {
             </h2>
             <p className="text-[#848E9C] text-base mb-8 max-w-xl mx-auto">
               Únete a miles de usuarios que ya están generando ingresos con la comisión del 5% por registro.
-              No te quedes fuera.
             </p>
-            <Button
-              onClick={() => document.getElementById('form')?.scrollIntoView({ behavior: 'smooth' })}
-              size="lg"
-              className="bg-[#F0B90B] hover:bg-[#F8D12F] text-[#0B0E11] font-bold rounded-xl px-10 py-6 text-base"
-            >
-              Registrarse Ahora
-              <ArrowRight className="w-5 h-5 ml-2" />
+            <Button onClick={onRegister} size="lg" className="bg-[#F0B90B] hover:bg-[#F8D12F] text-[#0B0E11] font-bold rounded-xl px-10 py-6 text-base">
+              Registrarse Ahora <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </div>
         </section>
       </main>
 
-      {/* ─── FOOTER ─── */}
+      {/* Footer */}
       <footer className="bg-[#0B0E11] border-t border-[#2B3139] mt-auto">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <img src="/assets/gcrm-logo.png" alt="GCRM" className="w-6 h-6 rounded-full" />
-              <span className="text-sm text-[#848E9C]">
-                © 2025 GCRM Exchange. Todos los derechos reservados.
-              </span>
+              <span className="text-sm text-[#848E9C]">© 2025 GCRM Exchange. Todos los derechos reservados.</span>
             </div>
             <div className="flex items-center gap-6 text-xs text-[#848E9C]">
               <a href="#" className="hover:text-[#F0B90B] transition-colors">Términos</a>
@@ -634,5 +894,51 @@ export default function Home() {
         </div>
       </footer>
     </div>
+  );
+}
+
+/* ─── MAIN: VIEW ROUTER ─── */
+
+export default function Home() {
+  const [user, setUser] = useState<SessionUser | null>(null);
+  const [checking, setChecking] = useState(true);
+  const [showLogin, setShowLogin] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
+
+  // Check session on mount
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.user) setUser(data.user);
+      })
+      .catch(() => {})
+      .finally(() => setChecking(false));
+  }, []);
+
+  if (checking) {
+    return (
+      <div className="min-h-screen bg-[#0B0E11] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-[#F0B90B] animate-spin" />
+      </div>
+    );
+  }
+
+  // Logged in → Dashboard
+  if (user) {
+    return (
+      <>
+        <Dashboard user={user} onLogout={() => setUser(null)} />
+      </>
+    );
+  }
+
+  // Not logged in → Landing + Login/Register dialogs
+  return (
+    <>
+      <LandingPage onLogin={() => setShowLogin(true)} onRegister={() => setShowRegister(true)} />
+      <LoginDialog open={showLogin} onOpenChange={setShowLogin} onSwitchToRegister={() => setShowRegister(true)} />
+      <RegisterDialog open={showRegister} onOpenChange={setShowRegister} onSwitchToLogin={() => setShowLogin(true)} />
+    </>
   );
 }
