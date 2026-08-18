@@ -1220,44 +1220,6 @@ function DepositInfo() {
 /* ─── LANDING PAGE ─── */
 
 function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister: () => void }) {
-  const [formData, setFormData] = useState({ nombres: '', correo: '', password: '' });
-  const [showPassword, setShowPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.nombres.trim()) {
-      toast({ title: 'Campo requerido', description: 'Por favor ingresa tu nombre completo.', variant: 'destructive' });
-      return;
-    }
-    if (!formData.correo.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.correo)) {
-      toast({ title: 'Correo inválido', description: 'Por favor ingresa un correo electrónico válido.', variant: 'destructive' });
-      return;
-    }
-    if (!formData.password || formData.password.length < 6) {
-      toast({ title: 'Contraseña corta', description: 'Mínimo 6 caracteres.', variant: 'destructive' });
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: formData.nombres, email: formData.correo, password: formData.password }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast({ title: 'Error', description: data.error, variant: 'destructive' });
-      } else {
-        toast({ title: 'Registro exitoso', description: `Bienvenido/a ${data.user.name}.` });
-        window.location.reload();
-      }
-    } catch {
-      toast({ title: 'Error', description: 'No se pudo conectar al servidor.', variant: 'destructive' });
-    }
-    setIsSubmitting(false);
-  };
 
   return (
     <div className="min-h-screen bg-[#0B0E11] flex flex-col">
@@ -1342,56 +1304,40 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
           </div>
         </section>
 
-        {/* Registration Form */}
-        <section id="form" className="py-16 md:py-20 bg-[#0B0E11]">
-          <div className="max-w-7xl mx-auto px-4 md:px-6">
-            <div className="max-w-2xl mx-auto">
-              <div className="text-center mb-10">
-                <div className="inline-flex items-center gap-2 mb-4">
-                  <Wallet className="w-5 h-5 text-[#F0B90B]" />
-                  <span className="text-[#F0B90B] text-sm font-medium uppercase tracking-wider">Formulario de Registro</span>
-                </div>
-                <h2 className="text-2xl md:text-3xl font-bold text-[#EAECEF] mb-3">
-                  Registro Miembros Ejecutivos <span className="text-gold-gradient">GCRM</span>
-                </h2>
-                <p className="text-[#848E9C] text-sm">Selecciona tu licencia ejecutiva y completa el registro para acceder a comisiones del 5%.</p>
+        {/* CTA Registro */}
+        <section className="py-16 md:py-20 bg-[#0B0E11]">
+          <div className="max-w-4xl mx-auto px-4 md:px-6">
+            <div className="glass-card rounded-2xl p-8 md:p-12 text-center border-[#F0B90B]/20">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#F0B90B]/10 border border-[#F0B90B]/20 mb-6">
+                <UserPlus className="w-4 h-4 text-[#F0B90B]" />
+                <span className="text-[#F0B90B] text-xs font-medium">Registro Ejecutivo</span>
               </div>
-              <form onSubmit={handleSubmit} className="glass-card rounded-2xl p-6 md:p-8 space-y-5">
-                {/* Nombre */}
-                <div className="space-y-2">
-                  <Label htmlFor="nombres" className="text-[#EAECEF] text-sm font-medium">Nombre Completo <span className="text-red-400">*</span></Label>
-                  <Input id="nombres" type="text" placeholder="Tu nombre" value={formData.nombres} onChange={(e) => setFormData((p) => ({ ...p, nombres: e.target.value }))}
-                    className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm" />
-                </div>
-                {/* Correo */}
-                <div className="space-y-2">
-                  <Label htmlFor="correo" className="text-[#EAECEF] text-sm font-medium">Correo Electrónico <span className="text-red-400">*</span></Label>
-                  <Input id="correo" type="email" placeholder="tucorreo@ejemplo.com" value={formData.correo} onChange={(e) => setFormData((p) => ({ ...p, correo: e.target.value }))}
-                    className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm" />
-                </div>
-                {/* Contraseña */}
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-[#EAECEF] text-sm font-medium">Contraseña <span className="text-red-400">*</span></Label>
-                  <div className="relative">
-                    <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="Mínimo 6 caracteres" value={formData.password} onChange={(e) => setFormData((p) => ({ ...p, password: e.target.value }))}
-                      className="bg-[#2B3139] border-[#2B3139] text-[#EAECEF] placeholder:text-[#5E6673] focus:border-[#F0B90B] focus:ring-[#F0B90B]/20 rounded-xl h-12 text-sm pr-10" />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#848E9C] hover:text-[#EAECEF] transition-colors">
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-                <Button type="submit" disabled={isSubmitting}
-                  className="w-full bg-[#F0B90B] hover:bg-[#F8D12F] text-[#0B0E11] font-bold rounded-xl h-12 text-base transition-all disabled:opacity-50">
-                  {isSubmitting ? (
-                    <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Registrando...</span>
-                  ) : (
-                    <span className="flex items-center justify-center gap-2">Registrarme Ahora</span>
-                  )}
+              <h2 className="text-2xl md:text-3xl font-bold text-[#EAECEF] mb-3">
+                Conviértete en Miembro Ejecutivo <span className="text-gold-gradient">GCRM</span>
+              </h2>
+              <p className="text-[#848E9C] text-sm md:text-base max-w-xl mx-auto mb-8">
+                Selecciona tu licencia ejecutiva, accede a comisiones del 5% por cada referido y forma parte del ecosistema GCRM Exchange.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <Button onClick={onRegister} size="lg"
+                  className="bg-gradient-to-r from-[#F0B90B] to-[#F8D12F] hover:from-[#F8D12F] hover:to-[#F0B90B] text-[#0B0E11] font-bold rounded-xl px-8 py-6 text-base gap-2 transition-all hover:shadow-lg hover:shadow-[#F0B90B]/20">
+                  <UserPlus className="w-5 h-5" />
+                  Registrarme Ahora <ArrowRight className="w-5 h-5 ml-1" />
                 </Button>
-                <p className="text-center text-xs text-[#5E6673]">
-                  Al registrarte aceptas los términos de GCRM Exchange.
-                </p>
-              </form>
+                <Button onClick={onLogin} size="lg" variant="outline"
+                  className="border-[#2B3139] text-[#EAECEF] hover:bg-[#1E2329] rounded-xl px-8 py-6 text-base gap-2">
+                  <LogIn className="w-5 h-5" />
+                  Ya tengo cuenta
+                </Button>
+              </div>
+              <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+                {LICENCIAS.map((l) => (
+                  <div key={l.id} className="bg-[#0B0E11]/60 rounded-xl p-3 border border-[#2B3139]/50">
+                    <p className="text-[#EAECEF] text-xs font-medium truncate">{l.label}</p>
+                    <p className="text-[#F0B90B] text-sm font-bold mt-1">{l.price}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
