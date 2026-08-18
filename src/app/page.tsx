@@ -23,7 +23,7 @@ import {
   ArrowRight, Wallet, Globe, Users, TrendingUp, LogOut, LogIn, User,
   DollarSign, Clock, CheckCircle, AlertCircle, LayoutDashboard,
   Eye, EyeOff, Loader2, BarChart3, UserPlus, Plane, Crown, Star, Award, Hash,
-  ShieldCheck, Trash2, UsersRound, ArrowUpDown,
+  ShieldCheck, Trash2, UsersRound, ArrowUpDown, Menu, X, ChevronDown, Search,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -1217,6 +1217,162 @@ function DepositInfo() {
   );
 }
 
+/* ─── LANGUAGE / CURRENCY SELECTOR (Binance-style) ─── */
+
+const LANGUAGES = [
+  { code: 'es-LA', label: 'Español (Latinoamérica)', flag: '🇲🇽' },
+  { code: 'es-ES', label: 'Español (España)', flag: '🇪🇸' },
+  { code: 'en', label: 'English', flag: '🇺🇸' },
+  { code: 'pt-BR', label: 'Português (Brasil)', flag: '🇧🇷' },
+  { code: 'zh-CN', label: '简体中文', flag: '🇨🇳' },
+  { code: 'ar', label: 'العربية', flag: '🇸🇦' },
+];
+
+const CURRENCIES = [
+  { code: 'USD', symbol: '$', label: 'USD' },
+  { code: 'EUR', symbol: '€', label: 'EUR' },
+  { code: 'ARS', symbol: 'AR$', label: 'ARS' },
+  { code: 'COP', symbol: 'COL$', label: 'COP' },
+  { code: 'MXN', symbol: 'MX$', label: 'MXN' },
+  { code: 'PEN', symbol: 'S/', label: 'PEN' },
+  { code: 'BRL', symbol: 'R$', label: 'BRL' },
+  { code: 'CLP', symbol: 'CLP$', label: 'CLP' },
+];
+
+function LangCurrencyMenu() {
+  const [open, setOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'lang' | 'currency'>('lang');
+  const [selectedLang, setSelectedLang] = useState('es-LA');
+  const [selectedCurrency, setSelectedCurrency] = useState('USD');
+  const [searchLang, setSearchLang] = useState('');
+  const [searchCurr, setSearchCurr] = useState('');
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const currentLang = LANGUAGES.find(l => l.code === selectedLang);
+  const currentCurr = CURRENCIES.find(c => c.code === selectedCurrency);
+
+  const filteredLangs = LANGUAGES.filter(l => l.label.toLowerCase().includes(searchLang.toLowerCase()));
+  const filteredCurrs = CURRENCIES.filter(c => c.label.toLowerCase().includes(searchCurr.toLowerCase()));
+
+  return (
+    <div className="relative" ref={ref}>
+      <button onClick={() => setOpen(!open)} className="flex items-center gap-1.5 text-[#848E9C] hover:text-[#EAECEF] transition-colors text-sm px-2 py-1 rounded-lg hover:bg-[#2B3139]/50">
+        <Globe className="w-4 h-4" />
+        <span className="hidden lg:inline">{currentLang?.flag} {currentCurr?.symbol}</span>
+        <ChevronDown className="w-3 h-3" />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-2 w-[520px] bg-[#1E2329] border border-[#2B3139] rounded-xl shadow-2xl overflow-hidden z-[60]">
+          {/* Tabs */}
+          <div className="flex border-b border-[#2B3139]">
+            <button onClick={() => setActiveTab('lang')} className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === 'lang' ? 'text-[#F0B90B] border-b-2 border-[#F0B90B]' : 'text-[#848E9C] hover:text-[#EAECEF]'}`}>
+              Idioma
+            </button>
+            <button onClick={() => setActiveTab('currency')} className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === 'currency' ? 'text-[#F0B90B] border-b-2 border-[#F0B90B]' : 'text-[#848E9C] hover:text-[#EAECEF]'}`}>
+              Moneda
+            </button>
+          </div>
+          <div className="p-3 max-h-[320px] overflow-y-auto">
+            {activeTab === 'lang' ? (
+              <>
+                <div className="mb-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#5E6673]" />
+                    <input type="text" placeholder="Buscar" value={searchLang} onChange={e => setSearchLang(e.target.value)} className="w-full bg-[#2B3139] border-none text-[#EAECEF] text-sm rounded-lg pl-9 pr-3 py-2 outline-none focus:ring-1 focus:ring-[#F0B90B]/30 placeholder:text-[#5E6673]" />
+                  </div>
+                </div>
+                <div className="space-y-0.5">
+                  {filteredLangs.map(l => (
+                    <button key={l.code} onClick={() => { setSelectedLang(l.code); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${l.code === selectedLang ? 'bg-[#F0B90B]/10 text-[#F0B90B]' : 'text-[#EAECEF] hover:bg-[#2B3139]'}`}>
+                      <span className="text-base">{l.flag}</span>
+                      <span>{l.label}</span>
+                      {l.code === selectedLang && <Check className="w-4 h-4 ml-auto" />}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="mb-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#5E6673]" />
+                    <input type="text" placeholder="Buscar" value={searchCurr} onChange={e => setSearchCurr(e.target.value)} className="w-full bg-[#2B3139] border-none text-[#EAECEF] text-sm rounded-lg pl-9 pr-3 py-2 outline-none focus:ring-1 focus:ring-[#F0B90B]/30 placeholder:text-[#5E6673]" />
+                  </div>
+                </div>
+                <div className="space-y-0.5">
+                  {filteredCurrs.map(c => (
+                    <button key={c.code} onClick={() => { setSelectedCurrency(c.code); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${c.code === selectedCurrency ? 'bg-[#F0B90B]/10 text-[#F0B90B]' : 'text-[#EAECEF] hover:bg-[#2B3139]'}`}>
+                      <span className="w-8 text-center font-medium">{c.symbol}</span>
+                      <span>{c.code}</span>
+                      {c.code === selectedCurrency && <Check className="w-4 h-4 ml-auto" />}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── MOBILE MENU ─── */
+
+function MobileMenu({ onLogin, onRegister }: { onLogin: () => void; onRegister: () => void }) {
+  const [open, setOpen] = useState(false);
+
+  const navLinks = [
+    { label: 'Registro', action: () => { setOpen(false); onRegister(); } },
+    { label: 'Depositar', href: '#deposit' },
+    { label: 'Exchanges', href: '#exchanges' },
+    { label: 'Hotcoin', href: '#hotcoin' },
+  ];
+
+  return (
+    <>
+      <button onClick={() => setOpen(true)} className="md:hidden text-[#848E9C] hover:text-[#EAECEF] transition-colors p-2">
+        <Menu className="w-5 h-5" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 bg-black/60 z-[70]" onClick={() => setOpen(false)} />
+          <div className="fixed top-0 left-0 h-full w-72 bg-[#1E2329] border-r border-[#2B3139] z-[80] flex flex-col animate-slide-in-left">
+            <div className="flex items-center justify-between p-4 border-b border-[#2B3139]">
+              <img src="/assets/gcrm-logo.png" alt="GCRM" className="h-8 w-auto object-contain" />
+              <button onClick={() => setOpen(false)} className="text-[#848E9C] hover:text-[#EAECEF] p-1"><X className="w-5 h-5" /></button>
+            </div>
+            <nav className="flex-1 py-4">
+              {navLinks.map(link => (
+                'action' in link ? (
+                  <button key={link.label} onClick={link.action} className="w-full text-left px-6 py-3.5 text-[#EAECEF] hover:bg-[#2B3139]/50 hover:text-[#F0B90B] transition-colors text-sm font-medium">
+                    {link.label}
+                  </button>
+                ) : (
+                  <a key={link.label} href={link.href} onClick={() => setOpen(false)} className="block px-6 py-3.5 text-[#EAECEF] hover:bg-[#2B3139]/50 hover:text-[#F0B90B] transition-colors text-sm font-medium">
+                    {link.label}
+                  </a>
+                )
+              ))}
+            </nav>
+            <div className="p-4 border-t border-[#2B3139] space-y-2">
+              <Button onClick={() => { setOpen(false); onLogin(); }} variant="outline" className="w-full border-[#2B3139] text-[#EAECEF] hover:bg-[#2B3139] rounded-lg text-sm gap-2">
+                <LogIn className="w-4 h-4" /> Ingresar
+              </Button>
+            </div>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
 /* ─── LANDING PAGE ─── */
 
 function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister: () => void }) {
@@ -1227,6 +1383,7 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
       <header className="sticky top-0 z-50 bg-[#0B0E11]/95 backdrop-blur-md border-b border-[#2B3139]">
         <nav className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center">
+            <MobileMenu onLogin={onLogin} onRegister={onRegister} />
             <img src="/assets/gcrm-logo.png" alt="GCRM Logo" className="h-9 md:h-10 w-auto object-contain" />
           </div>
           <div className="hidden md:flex items-center gap-6 text-sm text-[#848E9C]">
@@ -1236,6 +1393,7 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
             <a href="#hotcoin" className="hover:text-[#F0B90B] transition-colors">Hotcoin</a>
           </div>
           <div className="flex items-center gap-2">
+            <LangCurrencyMenu />
             <Button onClick={onLogin} variant="outline" className="border-[#2B3139] text-[#EAECEF] hover:bg-[#1E2329] rounded-lg text-sm gap-2">
               <LogIn className="w-4 h-4" />
               <span className="hidden sm:inline">Ingresar</span>

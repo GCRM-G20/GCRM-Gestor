@@ -258,6 +258,19 @@
   background-clip: text;
 }
 
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.25s ease-out forwards;
+}
+
 /* Glass card effect */
 .glass-card {
   background: rgba(30, 35, 41, 0.8);
