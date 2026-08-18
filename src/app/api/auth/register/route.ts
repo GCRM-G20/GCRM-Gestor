@@ -34,23 +34,6 @@ export async function POST(req: NextRequest) {
 
     await createSession({ id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role });
 
-    const demoNames = ['Carlos M.', 'Ana R.', 'Luis P.', 'María G.', 'Diego S.', 'Sofia L.', 'Pedro K.', 'Laura F.'];
-    const statuses = ['confirmed', 'confirmed', 'pending', 'confirmed', 'paid', 'pending', 'confirmed', 'pending'];
-    const networks = ['BEP 20 (BSC)', 'TRX (TRC 20)', 'SOL (Solana)'];
-
-    for (let i = 0; i < demoNames.length; i++) {
-      const depositAmt = Math.floor(Math.random() * 900 + 100);
-      await db.referral.create({
-        data: {
-          userId: newUser.id, referredName: demoNames[i],
-          referredEmail: `${demoNames[i].toLowerCase().replace(/[^a-z]/g, '')}@email.com`,
-          commission: depositAmt * 0.05, status: statuses[i],
-          depositAmount: depositAmt, depositNetwork: networks[i % 3],
-          createdAt: new Date(Date.now() - (demoNames.length - i) * 86400000),
-        },
-      });
-    }
-
     return NextResponse.json({ success: true, user: { id: newUser.id, name: newUser.name, email: newUser.email } });
   } catch (error) {
     console.error('Register error:', error);
