@@ -27,6 +27,7 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Me error:', error);
-    return NextResponse.json({ error: 'Error interno del servidor.' }, { status: 500 });
+    const msg = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: 'Error interno del servidor.', debug: msg }, { status: 500 });
   }
 }
