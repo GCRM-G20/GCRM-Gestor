@@ -23,7 +23,7 @@ import {
   ArrowRight, Wallet, Globe, Users, TrendingUp, LogOut, LogIn, User,
   DollarSign, Clock, CheckCircle, AlertCircle, LayoutDashboard,
   Eye, EyeOff, Loader2, BarChart3, UserPlus, Plane, Crown, Star, Award, Hash,
-  ShieldCheck, Trash2, UsersRound, ArrowUpDown, Menu, X, ChevronDown, Search,
+  ShieldCheck, Trash2, UsersRound, ArrowUpDown, Menu, X, ChevronDown, Search, Share2, Link as LinkIcon,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -969,6 +969,30 @@ function Dashboard({ user, onLogout }: { user: SessionUser; onLogout: () => void
               <p className="text-[#848E9C] text-sm">Por cada referido que deposite, ganas el 5% de su depósito automáticamente.</p>
             </div>
             <Badge className="bg-[#F0B90B]/10 text-[#F0B90B] border-[#F0B90B]/20 text-sm px-3 py-1 rounded-lg">ACTIVA</Badge>
+          </div>
+
+          {/* Referral Link Section */}
+          <div className="glass-card rounded-2xl p-5 md:p-6 mb-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-11 h-11 rounded-2xl bg-[#2EB6EA]/10 flex items-center justify-center shrink-0">
+                <Share2 className="w-6 h-6 text-[#2EB6EA]" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-[#EAECEF] font-bold text-base">Tu Enlace de Referido</h3>
+                <p className="text-[#848E9C] text-xs">Comparte este enlace y gana el 5% de cada depósito de tus referidos.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 bg-[#0B0E11] rounded-xl px-4 py-3 border border-[#2B3139] flex items-center gap-2 min-w-0">
+                <LinkIcon className="w-4 h-4 text-[#2EB6EA] shrink-0" />
+                <span className="text-[#EAECEF] text-sm font-mono truncate select-all">{typeof window !== 'undefined' ? `${window.location.origin}?ref=${user.id}` : ''}</span>
+              </div>
+              <CopyButton text={typeof window !== 'undefined' ? `${window.location.origin}?ref=${user.id}` : ''} />
+            </div>
+            <p className="text-[#5E6673] text-[11px] mt-3 flex items-start gap-1.5">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              Comparte este enlace con tus contactos. Cuando se registren mediante este link, quedarán vinculados a tu cuenta automáticamente.
+            </p>
           </div>
 
           {/* USDT Wallet Section */}
