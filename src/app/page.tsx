@@ -24,6 +24,7 @@ import {
   DollarSign, Clock, CheckCircle, AlertCircle, LayoutDashboard,
   Eye, EyeOff, Loader2, BarChart3, UserPlus, Plane, Crown, Star, Award, Hash,
   ShieldCheck, Trash2, UsersRound, ArrowUpDown, Menu, X, ChevronDown, Search, Share2, Link as LinkIcon,
+  Download, Moon,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -1400,13 +1401,14 @@ function MobileMenu({ onLogin, onRegister }: { onLogin: () => void; onRegister: 
 /* ─── LANDING PAGE ─── */
 
 function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister: () => void }) {
+  const { toast } = useToast();
 
   return (
     <div className="min-h-screen bg-[#0B0E11] flex flex-col">
       {/* Navbar */}
       <header className="sticky top-0 z-50 bg-[#0B0E11]/95 backdrop-blur-md border-b border-[#2B3139]">
         <nav className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center">
+          <div className="flex items-center gap-3">
             <MobileMenu onLogin={onLogin} onRegister={onRegister} />
             <img src="/assets/gcrm-logo.png" alt="GCRM Logo" className="h-9 md:h-10 w-auto object-contain" />
           </div>
@@ -1416,11 +1418,32 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
             <a href="#exchanges" className="hover:text-[#F0B90B] transition-colors">Exchanges</a>
             <a href="#hotcoin" className="hover:text-[#F0B90B] transition-colors">Hotcoin</a>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Search */}
+            <button className="flex items-center justify-center w-9 h-9 rounded-lg text-[#848E9C] hover:text-[#EAECEF] hover:bg-[#1E2329] transition-colors">
+              <Search className="w-[18px] h-[18px]" />
+            </button>
+            {/* Install App */}
+            <button onClick={() => toast({ title: 'Instalar App', description: 'Usa el menú de tu navegador para instalar GCRM en tu dispositivo.' })} className="flex items-center justify-center w-9 h-9 rounded-lg text-[#848E9C] hover:text-[#EAECEF] hover:bg-[#1E2329] transition-colors">
+              <Download className="w-[18px] h-[18px]" />
+            </button>
+            {/* Lang / Currency */}
             <LangCurrencyMenu />
-            <Button onClick={onLogin} variant="outline" className="border-[#2B3139] text-[#EAECEF] hover:bg-[#1E2329] rounded-lg text-sm gap-2">
+            {/* Dark mode */}
+            <button className="hidden sm:flex items-center justify-center w-9 h-9 rounded-lg text-[#848E9C] hover:text-[#EAECEF] hover:bg-[#1E2329] transition-colors">
+              <Moon className="w-[18px] h-[18px]" />
+            </button>
+            {/* Divider */}
+            <div className="hidden sm:block w-px h-5 bg-[#2B3139] mx-0.5" />
+            {/* Login */}
+            <Button onClick={onLogin} variant="outline" className="border-[#2B3139] text-[#EAECEF] hover:bg-[#1E2329] rounded-lg text-sm gap-1.5">
               <LogIn className="w-4 h-4" />
-              <span className="hidden sm:inline">Ingresar</span>
+              <span className="hidden sm:inline">Iniciar sesión</span>
+            </Button>
+            {/* Register (gold) */}
+            <Button onClick={onRegister} className="bg-[#F0B90B] hover:bg-[#F8D12F] text-[#0B0E11] font-semibold rounded-lg text-sm gap-1.5">
+              <UserPlus className="w-4 h-4" />
+              <span className="hidden sm:inline">Regístrate</span>
             </Button>
           </div>
         </nav>

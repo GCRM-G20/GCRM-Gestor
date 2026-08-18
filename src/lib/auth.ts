@@ -15,7 +15,7 @@ export async function createSession(user: SessionUser): Promise<void> {
   const cookie = await cookies();
   cookie.set(SESSION_COOKIE, payload, {
     httpOnly: true,
-    secure: false,
+    secure: true,
     sameSite: 'lax',
     maxAge: 60 * 60 * 24 * 7, // 7 days
     path: '/',
