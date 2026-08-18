@@ -1264,13 +1264,10 @@ const CURRENCIES = [
   { code: 'CLP', symbol: 'CLP$', label: 'CLP' },
 ];
 
-function LangCurrencyMenu() {
+function LangMenu() {
   const [open, setOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'lang' | 'currency'>('lang');
   const [selectedLang, setSelectedLang] = useState('es-LA');
-  const [selectedCurrency, setSelectedCurrency] = useState('USD');
   const [searchLang, setSearchLang] = useState('');
-  const [searchCurr, setSearchCurr] = useState('');
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -1280,67 +1277,32 @@ function LangCurrencyMenu() {
   }, []);
 
   const currentLang = LANGUAGES.find(l => l.code === selectedLang);
-  const currentCurr = CURRENCIES.find(c => c.code === selectedCurrency);
-
   const filteredLangs = LANGUAGES.filter(l => l.label.toLowerCase().includes(searchLang.toLowerCase()));
-  const filteredCurrs = CURRENCIES.filter(c => c.label.toLowerCase().includes(searchCurr.toLowerCase()));
 
   return (
     <div className="relative" ref={ref}>
       <button onClick={() => setOpen(!open)} className="flex items-center gap-1.5 text-[#848E9C] hover:text-[#EAECEF] transition-colors text-sm px-2 py-1 rounded-lg hover:bg-[#2B3139]/50">
         <Globe className="w-4 h-4" />
-        <span className="hidden lg:inline">{currentLang?.flag} {currentCurr?.symbol}</span>
+        <span className="hidden lg:inline">{currentLang?.flag}</span>
         <ChevronDown className="w-3 h-3" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-[520px] bg-[#1E2329] border border-[#2B3139] rounded-xl shadow-2xl overflow-hidden z-[60]">
-          {/* Tabs */}
-          <div className="flex border-b border-[#2B3139]">
-            <button onClick={() => setActiveTab('lang')} className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === 'lang' ? 'text-[#F0B90B] border-b-2 border-[#F0B90B]' : 'text-[#848E9C] hover:text-[#EAECEF]'}`}>
-              Idioma
-            </button>
-            <button onClick={() => setActiveTab('currency')} className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === 'currency' ? 'text-[#F0B90B] border-b-2 border-[#F0B90B]' : 'text-[#848E9C] hover:text-[#EAECEF]'}`}>
-              Moneda
-            </button>
+        <div className="absolute right-0 top-full mt-2 w-64 bg-[#1E2329] border border-[#2B3139] rounded-xl shadow-2xl overflow-hidden z-[60]">
+          <div className="px-4 pt-3 pb-2 text-xs text-[#848E9C] uppercase tracking-wider font-medium">Idioma</div>
+          <div className="px-3 pb-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#5E6673]" />
+              <input type="text" placeholder="Buscar" value={searchLang} onChange={e => setSearchLang(e.target.value)} className="w-full bg-[#2B3139] border-none text-[#EAECEF] text-sm rounded-lg pl-9 pr-3 py-2 outline-none focus:ring-1 focus:ring-[#F0B90B]/30 placeholder:text-[#5E6673]" />
+            </div>
           </div>
-          <div className="p-3 max-h-[320px] overflow-y-auto">
-            {activeTab === 'lang' ? (
-              <>
-                <div className="mb-2">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#5E6673]" />
-                    <input type="text" placeholder="Buscar" value={searchLang} onChange={e => setSearchLang(e.target.value)} className="w-full bg-[#2B3139] border-none text-[#EAECEF] text-sm rounded-lg pl-9 pr-3 py-2 outline-none focus:ring-1 focus:ring-[#F0B90B]/30 placeholder:text-[#5E6673]" />
-                  </div>
-                </div>
-                <div className="space-y-0.5">
-                  {filteredLangs.map(l => (
-                    <button key={l.code} onClick={() => { setSelectedLang(l.code); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${l.code === selectedLang ? 'bg-[#F0B90B]/10 text-[#F0B90B]' : 'text-[#EAECEF] hover:bg-[#2B3139]'}`}>
-                      <span className="text-base">{l.flag}</span>
-                      <span>{l.label}</span>
-                      {l.code === selectedLang && <Check className="w-4 h-4 ml-auto" />}
-                    </button>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="mb-2">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#5E6673]" />
-                    <input type="text" placeholder="Buscar" value={searchCurr} onChange={e => setSearchCurr(e.target.value)} className="w-full bg-[#2B3139] border-none text-[#EAECEF] text-sm rounded-lg pl-9 pr-3 py-2 outline-none focus:ring-1 focus:ring-[#F0B90B]/30 placeholder:text-[#5E6673]" />
-                  </div>
-                </div>
-                <div className="space-y-0.5">
-                  {filteredCurrs.map(c => (
-                    <button key={c.code} onClick={() => { setSelectedCurrency(c.code); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${c.code === selectedCurrency ? 'bg-[#F0B90B]/10 text-[#F0B90B]' : 'text-[#EAECEF] hover:bg-[#2B3139]'}`}>
-                      <span className="w-8 text-center font-medium">{c.symbol}</span>
-                      <span>{c.code}</span>
-                      {c.code === selectedCurrency && <Check className="w-4 h-4 ml-auto" />}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
+          <div className="px-2 pb-2 max-h-[280px] overflow-y-auto space-y-0.5">
+            {filteredLangs.map(l => (
+              <button key={l.code} onClick={() => { setSelectedLang(l.code); setOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${l.code === selectedLang ? 'bg-[#F0B90B]/10 text-[#F0B90B]' : 'text-[#EAECEF] hover:bg-[#2B3139]'}`}>
+                <span className="text-base">{l.flag}</span>
+                <span>{l.label}</span>
+                {l.code === selectedLang && <Check className="w-4 h-4 ml-auto" />}
+              </button>
+            ))}
           </div>
         </div>
       )}
@@ -1403,6 +1365,55 @@ function MobileMenu({ onLogin, onRegister }: { onLogin: () => void; onRegister: 
 function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister: () => void }) {
   const { toast } = useToast();
 
+  // Search state
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<{ id: string; title: string; desc: string; href: string }[]>([]);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const QUICK_SEARCH = [
+    { id: 'q1', title: 'Depositar USDT', desc: 'Instrucciones para depositar', href: '#deposit' },
+    { id: 'q2', title: 'Exchanges', desc: 'Intercambios disponibles', href: '#exchanges' },
+    { id: 'q3', title: 'Hotcoin', desc: 'Intercambio Hotcoin', href: '#hotcoin' },
+    { id: 'q4', title: 'Registro', desc: 'Regístrate como miembro', href: '#form' },
+  ];
+
+  const SEARCH_INDEX = [
+    { id: 's1', title: 'Registro Ejecutivo', desc: 'Formulario de registro de miembros ejecutivos GCRM', href: '#form', keywords: 'registro registrar miembro ejecutivo licencia' },
+    { id: 's2', title: 'Depositar USDT', desc: 'Deposita USDT en las redes disponibles', href: '#deposit', keywords: 'depositar usdt billetera red tron solana' },
+    { id: 's3', title: 'Exchanges', desc: 'Exchanges donde cotiza GCRM', href: '#exchanges', keywords: 'exchange intercambio cotizar comprar vender' },
+    { id: 's4', title: 'Hotcoin', desc: 'Intercambio Hotcoin para GCRM', href: '#hotcoin', keywords: 'hotcoin intercambio' },
+  ];
+
+  const handleSearch = (query: string) => {
+    if (!query.trim()) { setSearchResults([]); return; }
+    const q = query.toLowerCase();
+    const results = SEARCH_INDEX.filter(item =>
+      item.title.toLowerCase().includes(q) ||
+      item.desc.toLowerCase().includes(q) ||
+      item.keywords.toLowerCase().includes(q)
+    );
+    setSearchResults(results);
+  };
+
+  const handleSearchGo = () => {
+    if (searchResults.length > 0) {
+      setShowSearch(false);
+      setSearchQuery('');
+      setSearchResults([]);
+    } else {
+      toast({ title: 'Sin resultados', description: `No se encontró "${searchQuery}"`, variant: 'destructive' });
+    }
+  };
+
+  // Close search on click outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => { if (searchRef.current && !searchRef.current.contains(e.target as Node)) { setShowSearch(false); setSearchQuery(''); setSearchResults([]); } };
+    if (showSearch) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showSearch]);
+
   return (
     <div className="min-h-screen bg-[#0B0E11] flex flex-col">
       {/* Navbar */}
@@ -1413,22 +1424,68 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
             <img src="/assets/gcrm-logo.png" alt="GCRM Logo" className="h-9 md:h-10 w-auto object-contain" />
           </div>
           <div className="hidden md:flex items-center gap-6 text-sm text-[#848E9C]">
-            <button onClick={onRegister} className="hover:text-[#F0B90B] transition-colors">Registro</button>
             <a href="#deposit" className="hover:text-[#F0B90B] transition-colors">Depositar</a>
             <a href="#exchanges" className="hover:text-[#F0B90B] transition-colors">Exchanges</a>
             <a href="#hotcoin" className="hover:text-[#F0B90B] transition-colors">Hotcoin</a>
           </div>
           <div className="flex items-center gap-1.5 sm:gap-2">
             {/* Search */}
-            <button className="flex items-center justify-center w-9 h-9 rounded-lg text-[#848E9C] hover:text-[#EAECEF] hover:bg-[#1E2329] transition-colors">
-              <Search className="w-[18px] h-[18px]" />
-            </button>
+            <div className="relative" ref={searchRef}>
+              <button onClick={() => setShowSearch(!showSearch)} className="flex items-center justify-center w-9 h-9 rounded-lg text-[#848E9C] hover:text-[#EAECEF] hover:bg-[#1E2329] transition-colors">
+                {showSearch ? <X className="w-[18px] h-[18px]" /> : <Search className="w-[18px] h-[18px]" />}
+              </button>
+              {showSearch && (
+                <div className="absolute right-0 top-full mt-2 w-72 bg-[#1E2329] border border-[#2B3139] rounded-xl shadow-2xl overflow-hidden z-[60]">
+                  <div className="p-3">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5E6673]" />
+                      <input
+                        ref={searchInputRef}
+                        type="text"
+                        placeholder="Buscar en GCRM..."
+                        value={searchQuery}
+                        onChange={e => { setSearchQuery(e.target.value); handleSearch(e.target.value); }}
+                        onKeyDown={e => { if (e.key === 'Enter' && searchQuery.trim()) handleSearchGo(); }}
+                        className="w-full bg-[#2B3139] border border-[#2B3139] text-[#EAECEF] text-sm rounded-lg pl-10 pr-3 py-2.5 outline-none focus:border-[#F0B90B]/50 focus:ring-1 focus:ring-[#F0B90B]/30 placeholder:text-[#5E6673]"
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+                  {searchQuery.trim() && (
+                    <div className="border-t border-[#2B3139] max-h-60 overflow-y-auto">
+                      {searchResults.length > 0 ? searchResults.map(r => (
+                        <a key={r.id} href={r.href} onClick={() => { setShowSearch(false); setSearchQuery(''); setSearchResults([]); }} className="flex items-center gap-3 px-4 py-3 text-sm text-[#EAECEF] hover:bg-[#2B3139] transition-colors">
+                          <Search className="w-3.5 h-3.5 text-[#5E6673] shrink-0" />
+                          <div>
+                            <div className="font-medium">{r.title}</div>
+                            <div className="text-xs text-[#5E6673]">{r.desc}</div>
+                          </div>
+                        </a>
+                      )) : (
+                        <div className="px-4 py-6 text-center text-sm text-[#5E6673]">Sin resultados para "{searchQuery}"</div>
+                      )}
+                    </div>
+                  )}
+                  {!searchQuery.trim() && (
+                    <div className="border-t border-[#2B3139] p-2">
+                      <div className="px-3 py-1.5 text-[10px] text-[#5E6673] uppercase tracking-wider">Accesos rápidos</div>
+                      {QUICK_SEARCH.map(q => (
+                        <a key={q.id} href={q.href} onClick={() => { setShowSearch(false); setSearchQuery(''); }} className="flex items-center gap-3 px-3 py-2 text-sm text-[#848E9C] hover:text-[#EAECEF] hover:bg-[#2B3139] rounded-lg transition-colors">
+                          <Search className="w-3.5 h-3.5" />
+                          <span>{q.title}</span>
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
             {/* Install App */}
             <button onClick={() => toast({ title: 'Instalar App', description: 'Usa el menú de tu navegador para instalar GCRM en tu dispositivo.' })} className="flex items-center justify-center w-9 h-9 rounded-lg text-[#848E9C] hover:text-[#EAECEF] hover:bg-[#1E2329] transition-colors">
               <Download className="w-[18px] h-[18px]" />
             </button>
-            {/* Lang / Currency */}
-            <LangCurrencyMenu />
+            {/* Lang */}
+            <LangMenu />
             {/* Dark mode */}
             <button className="hidden sm:flex items-center justify-center w-9 h-9 rounded-lg text-[#848E9C] hover:text-[#EAECEF] hover:bg-[#1E2329] transition-colors">
               <Moon className="w-[18px] h-[18px]" />
