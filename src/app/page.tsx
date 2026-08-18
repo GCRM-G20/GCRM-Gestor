@@ -1268,7 +1268,7 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
             <img src="/assets/gcrm-logo.png" alt="GCRM Logo" className="h-9 md:h-10 w-auto object-contain" />
           </div>
           <div className="hidden md:flex items-center gap-6 text-sm text-[#848E9C]">
-            <a href="#form" className="hover:text-[#F0B90B] transition-colors">Registro</a>
+            <button onClick={onRegister} className="hover:text-[#F0B90B] transition-colors">Registro</button>
             <a href="#deposit" className="hover:text-[#F0B90B] transition-colors">Depositar</a>
             <a href="#exchanges" className="hover:text-[#F0B90B] transition-colors">Exchanges</a>
             <a href="#hotcoin" className="hover:text-[#F0B90B] transition-colors">Hotcoin</a>
