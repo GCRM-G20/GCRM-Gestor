@@ -1,4 +1,5 @@
 // Database layer: Prisma + Supabase (PostgreSQL)
+// Hardcoded Supabase connection for Netlify serverless
 
 export interface DBUser {
   id: string;
@@ -31,16 +32,18 @@ export interface DBReferral {
   updatedAt: string;
 }
 
-const SUPABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres.fiyodooqhoiewgthyrmh:GCRM%40999consultor@aws-0-us-east-2.pooler.supabase.com:6543/postgres';
+// Supabase PostgreSQL connection (us-east-2)
+const SUPABASE_DIRECT_URL = 'postgresql://postgres.fiyodooqhoiewgthyrmh:GCRM%40999consultor@aws-0-us-east-2.pooler.supabase.com:6543/postgres';
 
 let _prisma: any = null;
 
 async function getPrisma() {
-  if (_prisma) return _prisma;
-  const { PrismaClient } = await import('@prisma/client');
-  _prisma = new PrismaClient({
-    datasources: SUPABASE_URL ? { db: { url: SUPABASE_URL } } : undefined,
-  });
+  if (!_prisma) {
+    const { PrismaClient } = await import('@prisma/client');
+    _prisma = new PrismaClient({
+      datasources: { db: { url: SUPABASE_DIRECT_URL } },
+    });
+  }
   return _prisma;
 }
 
