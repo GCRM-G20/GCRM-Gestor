@@ -26,8 +26,14 @@ export async function GET() {
       .filter((r) => r.status === 'pending')
       .reduce((sum, r) => sum + r.commission, 0);
 
+    const serialized = refs.map((r: any) => ({
+      ...r,
+      createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : r.createdAt,
+      updatedAt: r.updatedAt instanceof Date ? r.updatedAt.toISOString() : r.updatedAt,
+    }));
+
     return NextResponse.json({
-      referrals: refs,
+      referrals: serialized,
       stats: {
         totalCommissions: Math.round(totalCommissions * 100) / 100,
         confirmedCommissions: Math.round(confirmedCommissions * 100) / 100,

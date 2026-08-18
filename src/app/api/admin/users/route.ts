@@ -18,7 +18,20 @@ export async function GET() {
       refCounts[r.userId] = (refCounts[r.userId] || 0) + 1;
     }
 
-    const enriched = users.map((u: any) => ({ ...u, _count: { referrals: refCounts[u.id] || 0 } }));
+    const enriched = users.map((u: any) => ({
+      id: u.id,
+      name: u.name,
+      username: u.username,
+      email: u.email,
+      role: u.role,
+      licencia: u.licencia,
+      tradingPackage: u.tradingPackage,
+      usdtWallet: u.usdtWallet,
+      usdtNetwork: u.usdtNetwork,
+      createdAt: u.createdAt instanceof Date ? u.createdAt.toISOString() : u.createdAt,
+      updatedAt: u.updatedAt instanceof Date ? u.updatedAt.toISOString() : u.updatedAt,
+      _count: { referrals: refCounts[u.id] || 0 },
+    }));
 
     return NextResponse.json({ users: enriched });
   } catch (error) {

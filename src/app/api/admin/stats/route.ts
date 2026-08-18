@@ -16,7 +16,10 @@ export async function GET() {
     const totalUsers = allUsers.length;
     const admins = allUsers.filter(u => u.role === 'admin').length;
     const sevenDaysAgo = new Date(Date.now() - 7 * 86400000);
-    const recentUsers = allUsers.filter(u => new Date(u.createdAt) >= sevenDaysAgo).length;
+    const recentUsers = allUsers.filter(u => {
+      const d = u.createdAt instanceof Date ? u.createdAt : new Date(u.createdAt);
+      return d >= sevenDaysAgo;
+    }).length;
     const totalReferrals = allRefs.length;
     const totalCommissions = allRefs.reduce((s, r) => s + r.commission, 0);
     const paidCommissions = allRefs.filter(r => r.status === 'paid').reduce((s, r) => s + r.commission, 0);

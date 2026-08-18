@@ -22,12 +22,11 @@ export async function GET() {
         licencia: u.licencia, username: u.username,
         paymentHash: u.paymentHash, tradingPackage: u.tradingPackage,
         usdtWallet: u.usdtWallet, usdtNetwork: u.usdtNetwork,
-        createdAt: u.createdAt,
+        createdAt: u.createdAt instanceof Date ? u.createdAt.toISOString() : u.createdAt,
       },
     });
   } catch (error) {
     console.error('Me error:', error);
-    const msg = error instanceof Error ? error.message : String(error);
-    return NextResponse.json({ error: 'Error interno del servidor.', debug: msg }, { status: 500 });
+    return NextResponse.json({ error: 'Error interno del servidor.' }, { status: 500 });
   }
 }
